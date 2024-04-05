@@ -4,44 +4,44 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#define msgLenght 256
 
 int main(int argc, char *argv[]) {
   int dS = socket(PF_INET, SOCK_STREAM, 0);
-  printf("Socket Créé\n");
+  printf("Socket created\n");
   struct sockaddr_in aS;
   aS.sin_family = AF_INET;
   inet_pton(AF_INET,argv[1],&(aS.sin_addr)) ;
   aS.sin_port = htons(atoi(argv[2])) ;
   socklen_t lgA = sizeof(struct sockaddr_in) ;
   connect(dS, (struct sockaddr *) &aS, lgA);
-  printf("Socket Connecté\n");
+  printf("Socket connected\n");
 
   int isRunning = 1;
   int client = atoi(argv[3]);
-  char buffer [256];
+  char buffer [msgLenght];
   while(isRunning == 1){
     if(client == 1){
-      printf("Veuillez entrer une chaîne de caractères : ");
+      printf("Please enter a string of characters : ");
       
-      if (fgets(buffer, 256, stdin) != NULL) {
-        printf("Vous avez saisi : %s\n", buffer);
+      if (fgets(buffer, msgLenght, stdin) != NULL) {
+        printf("You have entered : %s\n", buffer);
       } else {
-        printf("Erreur de lecture ou fin de fichier détectée.\n");
+        printf("Error reading or end of file detected.\n");
       }
       send(dS, buffer, strlen(buffer) , 0);
-      printf("Message Envoyé \n");
+      printf("Message sent \n");
       client = 2;
     }
     else{
-      char buffer [256];
-      recv(dS, buffer, sizeof(buffer), 0) ;
-      printf("Message reçu : %s\n", buffer);
+      recv(dS, buffer, (buffer), 0) ;
+      printf("Message received : %s\n", buffer);
       client = 1;
     }
     if(strcmp(buffer,"fin") == 0){
       shutdown(dS,2) ;
       isRunning = 0;
-      printf("Fin du programme");
+      printf("End of program");
     }
   }
 }

@@ -7,6 +7,7 @@
 #define msgLenght 256
 
 int main(int argc, char *argv[]) {
+  //connect the socket
   int dS = socket(PF_INET, SOCK_STREAM, 0);
   printf("Socket created\n");
   struct sockaddr_in aS;
@@ -17,27 +18,35 @@ int main(int argc, char *argv[]) {
   connect(dS, (struct sockaddr *) &aS, lgA);
   printf("Socket connected\n");
 
+  //create a variable to know who should receive and send
+  //create a varible to know when the loop should stop
   int isRunning = 1;
   int client = atoi(argv[3]);
   char buffer [msgLenght];
   while(isRunning == 1){
     if(client == 1){
-      printf("Please enter a string of characters : ");
+      printf("Please enter a string of characters : \n");
       
+      //read the keyboard enter
       if (fgets(buffer, msgLenght, stdin) != NULL) {
         printf("You have entered : %s\n", buffer);
       } else {
         printf("Error reading or end of file detected.\n");
       }
+
+      //send the message
       send(dS, buffer, strlen(buffer) , 0);
       printf("Message sent \n");
       client = 2;
     }
     else{
-      recv(dS, buffer, (buffer), 0) ;
+      //receive the message
+      recv(dS, buffer, msgLenght, 0) ;
       printf("Message received : %s\n", buffer);
       client = 1;
     }
+
+    //check if the loop is finished with the word "fin"
     if(strcmp(buffer,"fin") == 0){
       shutdown(dS,2) ;
       isRunning = 0;

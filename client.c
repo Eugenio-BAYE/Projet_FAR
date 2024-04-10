@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
     }
     else{
       //receive the message
+      printf("Ready to receive\n");
       recv(dS, buffer, msgLenght, 0) ;
       printf("Message received : %s\n", buffer);
       client = 1;
@@ -50,7 +51,7 @@ int main(int argc, char *argv[]) {
     if(strcmp(buffer,"fin") == 0){
       shutdown(dS,2) ;
       isRunning = 0;
-      printf("End of program");
+      printf("End of program\n");
     }
   }
 }

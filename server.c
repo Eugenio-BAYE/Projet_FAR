@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
 
   while(1){
     char msg1[msgLenght];
+    memset(msg1, '\0', sizeof(msg1)); // Initialisze msg1 to null
     // Receive from client 1
     if (recv(dSC1, msg1, sizeof(msg1), 0)>=0){
       printf("Message received from client 1\n");
@@ -73,6 +74,7 @@ int main(int argc, char *argv[]) {
     }
 
     char msg2[msgLenght];
+    memset(msg2, '\0', sizeof(msg2)); // Initialize msg2 to null
     // Receive from client 2
     if (recv(dSC2, msg2, sizeof(msg2), 0)>=0){
       printf("Message received from client 1\n");

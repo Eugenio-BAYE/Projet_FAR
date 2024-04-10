@@ -48,10 +48,17 @@ int main(int argc, char *argv[]) {
     }
 
     //check if the loop is finished with the word "fin"
-    if(strcmp(buffer,"fin") == 0){
+    char compare [256];
+    memset(compare, '\0', sizeof(compare));
+    compare[0] = 'f';
+    compare[1] = 'i';
+    compare[2] = 'n';
+    compare[3] = '\n';
+    if(strcmp(buffer,compare) == 0){
       shutdown(dS,2) ;
       isRunning = 0;
       printf("End of program\n");
+      shutdown(dS, 2) ; 
     }
   }
 }

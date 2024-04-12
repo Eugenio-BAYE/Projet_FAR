@@ -5,12 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+// Include files
+#include "src/client_handling.h" 
 // ------------------------------------------------------
 
 #define globalMessageLenght 256
 
 int main(int argc, char *argv[]) {
-  
   printf("Starting program\n");
 
   int msgLenght = globalMessageLenght;
@@ -46,19 +47,10 @@ int main(int argc, char *argv[]) {
   socklen_t lg1 = sizeof(struct sockaddr_in);
   socklen_t lg2 = sizeof(struct sockaddr_in);
 
-  // Client 1 connection
-  int dSC1 = accept(dS, (struct sockaddr*) &aC1,&lg1) ;
-  if (dSC1==-1){
-    printf("ERROR : Failed to connect with client\n");
-  }
-  printf("Client 1 connected\n");
-
+  // Client 1 connections
+  int dSC1 = new_client_connection(dS);
   // Client 2 connection 
-  int dSC2 = accept(dS, (struct sockaddr*) &aC2,&lg2) ;
-  if (dSC2==-1){
-    printf("ERROR : Failed to connect with client\n");
-  }
-  printf("Client 2 connected\n");
+  int dSC2 =  new_client_connection(dS);
 
   printf("Start chatting\n");
 

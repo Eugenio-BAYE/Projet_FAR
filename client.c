@@ -23,7 +23,7 @@ int connectSocket(char * arg1, int arg2 ){
 
 void* sendMsg(int client, int dS){
     int isRunning = 1;
-    char buffer [msgLenght];
+    char * buffer = malloc(msgLenght);
   
     while(isRunning == 1){
         //read the keyboard enter
@@ -51,13 +51,14 @@ void* sendMsg(int client, int dS){
             printf("End of program\n");
         }
     }
+    free(buffer);
     shutdown(dS, 2);
     return NULL;
 }
 
 void* receiveMsg(int client, int dS){
     int isRunning = 1;
-    char buffer [msgLenght];
+    char * buffer = malloc(msgLenght);
     while(isRunning == 1){
         //receive the message
         printf("Ready to receive\n");
@@ -77,6 +78,7 @@ void* receiveMsg(int client, int dS){
             printf("End of program\n");
         }
     }
+    free(buffer);
     shutdown(dS,2) ;
     return NULL;
 }

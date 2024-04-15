@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -o
-SRCS = src/*.c
+SRCSSERV = src/server_src/*.c
 
 all: server
 
 server : server.c
-	$(CC) $(CFLAGS) $@ $^ $(SRCS)
+	$(CC) $(CFLAGS) $@ $^ $(SRCSSERV)

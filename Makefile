@@ -6,3 +6,6 @@ all: server
 
 server : server.c
 	$(CC) $(CFLAGS) $@ $^ $(SRCSSERV)
+
+clean:
+	rm -f server

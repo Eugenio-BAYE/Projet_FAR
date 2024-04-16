@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <string.h>
 
 /* new_client_connection : Accepts a new client 
  * Parameters : int server_socket (file descriptor of the socket)
@@ -24,5 +25,12 @@ int new_client_connection(int server_socket) {
  * Preconditions : Ensure messages will fit in var "msg"
  * Parameters : int dSC (descriptor of socket client), char *msg[] (char list in wich the message is returned)
  */
-void receive_from_client(int dSC, char *msg[]){
+void receive_from_client(int dSC, char msg[], int msgLenght){
+  // Empty msg of all content
+  memset(msg, '\0', msgLenght);
+
+  if (recv(dSC, msg, msgLenght, 0)>=0){
+    printf("Message received from client\n");
+  }
+  printf("receive_from_client1 : %s\n", msg);
 }

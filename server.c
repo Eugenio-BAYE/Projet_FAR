@@ -4,12 +4,31 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 // Include files
 #include "src/server_src/client_handling.h" 
 #include "src/server_src/server_handling.h"
 // ------------------------------------------------------
 
 #define globalMessageLenght 256
+
+struct ThreadArgs {
+    int dSC_sender;
+    int dSC_receiver;
+};
+
+void* handle_client(void* args) {
+    struct ThreadArgs* t_args = (struct ThreadArgs*)args;
+    int dSC_sender = t_args->dSC_sender;
+    int dSC_receiver = t_args->dSC_receiver;
+    char msg[globalMessageLenght];
+
+    while (1) {
+        receive_from_client(dSC_sender, msg, globalMessageLenght);
+        send(dSC_receiver, msg, sizeof(msg), 0);
+        printf("Message sent\n");
+    }
+}
 
 int main(int argc, char *argv[]) {
 
@@ -28,20 +47,23 @@ int main(int argc, char *argv[]) {
 
   printf("Start chatting\n");
 
+  pthread_t thread1, thread2;
+  struct ThreadArgs args1 = {dSC1, dSC2};
+  struct ThreadArgs args2 = {dSC2, dSC1};
   char msg[msgLenght];
 
+  if (pthread_create(&thread1, NULL, handle_client, (void*)&args1) != 0) {
+    perror("pthread_create");
+    return 1;
+  }
+  
+  if (pthread_create(&thread2, NULL, handle_client, (void*)&args2) != 0){
+    perror("pthread_create");
+    return 1;
+  }
+  
   while(1){
-    // Receive from client 1
-    receive_from_client(dSC1,msg,msgLenght);
-    // Send to client 2
-    send(dSC2, msg, sizeof(msg), 0);
-    printf("Message sent to client 1\n");
 
-    // Receive from client 2
-    receive_from_client(dSC2,msg,msgLenght);
-    // Send to client 1
-    send(dSC1, msg, sizeof(msg), 0);
-    printf("Message sent to client 2\n");
   }
 
   printf("Shutting down programm\n");

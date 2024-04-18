@@ -8,7 +8,7 @@
 #define msgLength 256
 
 int connectSocket(char * arg1, int arg2 ){
-    //Connect the socket and the server
+    // Connect the socket and the server
     int dS = socket(PF_INET, SOCK_STREAM, 0);
     struct sockaddr_in aS;
     aS.sin_family = AF_INET;
@@ -35,7 +35,7 @@ void* sendMsg(int client, int dS){
     char * buffer = malloc(msgLength);
   
     while(isRunning == 1){
-        //read the keyboard enter
+        // Read the keyboard enter
         printf("Please enter a string of characters : \n");
         if (fgets(buffer, msgLength, stdin) != NULL) {
             printf("You have entered : %s\n", buffer);
@@ -54,7 +54,7 @@ void* sendMsg(int client, int dS){
             }
             printf("Message sent \n");
             
-            //check if the loop is finished with the word "fin"
+            // Check if the loop is finished with the word "fin"
             if (compareFin(buffer) == 1){
                 isRunning = 0;
                 printf("End of program\n");
@@ -83,7 +83,7 @@ void* receiveMsg(int client, int dS) {
             break; // Go out of the loop if the receive dont work
         }
 
-        // Recevoir le message
+        // Receive the message
         if (recv(dS, buffer, inputLength, 0) == -1) {
             perror("Error receiving message");
             break; // Go out of the loop if the receive dont work
@@ -91,7 +91,7 @@ void* receiveMsg(int client, int dS) {
 
         printf("Message received : %s\n", buffer);
 
-        //check if the loop is finished with the word "fin"
+        // Check if the loop is finished with the word "fin"
         if (compareFin(buffer) == 1){
             isRunning = 0;
             printf("End of program\n");
@@ -104,31 +104,31 @@ void* receiveMsg(int client, int dS) {
 
 
 int main(int argc, char *argv[]) {
-    //Check the number of arguments
+    // Check the number of arguments
     if (argc != 3) {
         printf("Invalid number of arguments, usage:\n");
         printf("%s IpServer Port\n", argv[0]);
         exit(0);
     }
 
-    //connect the socket
+    // Connect the socket
     int dS = connectSocket(argv[1], atoi(argv[2]) );
     int client = atoi(argv[3]);
     pthread_t thread1, thread2;
     
-    //create first thread
+    // Create first thread
     if (pthread_create(&thread1, NULL, sendMsg(client, dS), NULL) != 0) {
         perror("pthread_create");
         return 1;
     }
     
-    //create second thread
+    // Create second thread
     if (pthread_create(&thread2, NULL, receiveMsg(client, dS), NULL) != 0) {
         perror("pthread_create");
         return 1;
     }
     
-    //wait the end of threads
+    // Wait the end of threads
     if (pthread_join(thread1, NULL) != 0) {
         perror("pthread_join");
         return 1;

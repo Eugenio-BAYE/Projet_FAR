@@ -5,12 +5,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#define msgLenght 256
+#define msgLength 256
 
 int connectSocket(char * arg1, int arg2 ){
-    //connect the socket
+    //Connect the socket and the server
     int dS = socket(PF_INET, SOCK_STREAM, 0);
-
     struct sockaddr_in aS;
     aS.sin_family = AF_INET;
     inet_pton(AF_INET,arg1,&(aS.sin_addr)) ;
@@ -21,69 +20,96 @@ int connectSocket(char * arg1, int arg2 ){
     return dS;
 }
 
+int compareFin(char * buffer){
+    // Check if the char * contains only the word "fin", return 1 if it contains only "fin" or return 0 otherwise
+    if(strcmp(buffer, "fin\n") == 0){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
 void* sendMsg(int client, int dS){
     int isRunning = 1;
-    char * buffer = malloc(msgLenght);
+    char * buffer = malloc(msgLength);
   
     while(isRunning == 1){
         //read the keyboard enter
         printf("Please enter a string of characters : \n");
-        if (fgets(buffer, msgLenght, stdin) != NULL) {
-          printf("You have entered : %s\n", buffer);
-        } else {
-          printf("Error reading or end of file detected.\n");
-        }
+        if (fgets(buffer, msgLength, stdin) != NULL) {
+            printf("You have entered : %s\n", buffer);
+            size_t inputLength = strlen(buffer); // -1 pour exclure le caractère de saut de ligne ('\n')
+            printf("Number of characters entered: %zu\n", inputLength);
 
-        //send the message
-        send(dS, buffer, strlen(buffer) , 0);
-        printf("Message sent \n");
-        client = 2;
+            if (send(dS, &inputLength, sizeof(size_t), 0) == -1) {
+                perror("Error sending size");
+                break; // Go out of the loop if the send dont work
+            }
+            printf("Input length sent \n");
 
-        //check if the loop is finished with the word "fin"
-        char compare [256];
-        memset(compare, '\0', sizeof(compare));
-        compare[0] = 'f';
-        compare[1] = 'i';
-        compare[2] = 'n';
-        compare[3] = '\n';
-        if(strcmp(buffer,compare) == 0){
-            isRunning = 0;
-            printf("End of program\n");
+            if (send(dS, buffer, inputLength, 0) == -1) {
+                perror("Error sending message");
+                break; // Go out of the loop if the send dont work
+            }
+            printf("Message sent \n");
+            
+            //check if the loop is finished with the word "fin"
+            if (compareFin(buffer) == 1){
+                isRunning = 0;
+                printf("End of program\n");
+            }
+        } 
+        else {
+            printf("Error reading or end of file detected.\n");
         }
     }
     free(buffer);
-    shutdown(dS, 2);
+    shutdown(dS, 2); // Close the connection
     return NULL;
 }
 
-void* receiveMsg(int client, int dS){
+void* receiveMsg(int client, int dS) {
     int isRunning = 1;
-    char * buffer = malloc(msgLenght);
-    while(isRunning == 1){
-        //receive the message
+    char *buffer = malloc(msgLength);
+  
+    while(isRunning == 1) {
         printf("Ready to receive\n");
-        recv(dS, buffer, msgLenght, 0) ;
+        size_t inputLength;
+
+        // Receive the size of the message
+        if (recv(dS, &inputLength, sizeof(size_t), 0) == -1) {
+            perror("Error receiving message size");
+            break; // Go out of the loop if the receive dont work
+        }
+
+        // Recevoir le message
+        if (recv(dS, buffer, inputLength, 0) == -1) {
+            perror("Error receiving message");
+            break; // Go out of the loop if the receive dont work
+        }
+
         printf("Message received : %s\n", buffer);
-        client = 1;
 
         //check if the loop is finished with the word "fin"
-        char compare [256];
-        memset(compare, '\0', sizeof(compare));
-        compare[0] = 'f';
-        compare[1] = 'i';
-        compare[2] = 'n';
-        compare[3] = '\n';
-        if(strcmp(buffer,compare) == 0){
+        if (compareFin(buffer) == 1){
             isRunning = 0;
             printf("End of program\n");
         }
     }
     free(buffer);
-    shutdown(dS,2) ;
+    shutdown(dS, 2); // Close the connection
     return NULL;
 }
+
 
 int main(int argc, char *argv[]) {
+    //Check the number of arguments
+    if (argc != 3) {
+        printf("Invalid number of arguments, usage:\n");
+        printf("%s IpServer Port\n", argv[0]);
+        exit(0);
+    }
 
     //connect the socket
     int dS = connectSocket(argv[1], atoi(argv[2]) );
@@ -112,5 +138,5 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-return 0;
+    return 0;
 }

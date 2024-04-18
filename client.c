@@ -39,7 +39,7 @@ void* sendMsg(int client, int dS){
         printf("Please enter a string of characters : \n");
         if (fgets(buffer, msgLength, stdin) != NULL) {
             printf("You have entered : %s\n", buffer);
-            size_t inputLength = strlen(buffer); // -1 pour exclure le caractère de saut de ligne ('\n')
+            size_t inputLength = strlen(buffer); // -1 to exclude the newline character ('\n')
             printf("Number of characters entered: %zu\n", inputLength);
 
             if (send(dS, &inputLength, sizeof(size_t), 0) == -1) {
@@ -48,7 +48,7 @@ void* sendMsg(int client, int dS){
             }
             printf("Input length sent \n");
 
-            if (send(dS, buffer, inputLength, 0) == -1) {
+            if (send(dS, buffer, inputLength+1, 0) == -1) {
                 perror("Error sending message");
                 break; // Go out of the loop if the send dont work
             }
@@ -79,7 +79,7 @@ void* receiveMsg(int client, int dS) {
 
         // Receive the size of the message
         if (recv(dS, &inputLength, sizeof(size_t), 0) == -1) {
-            perror("Error receiving message size");
+            perror("Error receiving size");
             break; // Go out of the loop if the receive dont work
         }
 

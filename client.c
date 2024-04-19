@@ -7,16 +7,29 @@
 #include <pthread.h>
 #define msgLength 256
 
+struct thread_args {
+    int dS;
+};
+
 int connectSocket(char * arg1, int arg2 ){
-    // Connect the socket and the server
+    // Create the socket
     int dS = socket(PF_INET, SOCK_STREAM, 0);
+    if (dS == -1){
+        perror("Error creating socket");
+        exit(0);
+    }
+    // Create the adress
     struct sockaddr_in aS;
     aS.sin_family = AF_INET;
     inet_pton(AF_INET,arg1,&(aS.sin_addr)) ;
     aS.sin_port = htons(arg2) ;
     socklen_t lgA = sizeof(struct sockaddr_in) ;
-    connect(dS, (struct sockaddr *) &aS, lgA);
-    printf("Socket connected\n");
+    // Connect the socket
+    if (connect(dS, (struct sockaddr *) &aS, lgA) == -1){
+        perror("Error connecting socket");
+        exit(0);
+    }
+    puts ("Socket connected");
     return dS;
 }
 
@@ -30,10 +43,6 @@ int compareFin(char * buffer){
     }
 }
 
-struct thread_args {
-    int dS;
-};
-
 void* sendMsg(void * args){
     struct thread_args * t_args = (struct thread_args *) args;
     int dS = t_args -> dS;
@@ -42,32 +51,37 @@ void* sendMsg(void * args){
   
     while(isRunning == 1){
         // Read the keyboard enter
-        printf("Please enter a string of characters : \n");
+        puts("Please enter a string of characters :");
         if (fgets(buffer, msgLength, stdin) != NULL) {
-            printf("You have entered : %s\n", buffer);
+            puts ("You have entered:") ;
+            puts (buffer);
             size_t inputLength = strlen(buffer); // -1 to exclude the newline character ('\n')
-            printf("Number of characters entered: %zu\n", inputLength);
+            char lengthString[20]; // Create a char for create a String of the size
+            snprintf(lengthString, 20, "%zu", inputLength); // Convert it
+            puts ("Number of characters entered:");
+            puts (lengthString); //Print it
 
             if (send(dS, &inputLength, sizeof(size_t), 0) == -1) {
                 perror("Error sending size");
                 break; // Go out of the loop if the send dont work
             }
-            printf("Input length sent \n");
+            puts ("Input length sent");
+
 
             if (send(dS, buffer, inputLength+1, 0) == -1) {
                 perror("Error sending message");
                 break; // Go out of the loop if the send dont work
             }
-            printf("Message sent \n");
+            puts ("Message sent");
             
             // Check if the loop is finished with the word "fin"
             if (compareFin(buffer) == 1){
                 isRunning = 0;
-                printf("End of program\n");
+                puts ("End of program");
             }
         } 
         else {
-            printf("Error reading or end of file detected.\n");
+            puts ("Error reading or end of file detected");
         }
     }
     free(buffer);
@@ -82,7 +96,7 @@ void* receiveMsg(void* args) {
     char * buffer = malloc(msgLength);
   
     while(isRunning == 1) {
-        printf("Ready to receive\n");
+        puts ("Ready to receive");
         size_t inputLength;
 
         // Receive the size of the message
@@ -90,8 +104,10 @@ void* receiveMsg(void* args) {
             perror("Error receiving size");
             break; // Go out of the loop if the receive dont work
         }
-
-        printf("Size received: %zu",inputLength);
+        char lengthString[20]; // Create a char for create a String of the size
+        snprintf(lengthString, 20, "%zu", inputLength); // Convert it
+        puts ("Size received:");
+        puts (lengthString); //Print it
 
         // Receive the message
         if (recv(dS, buffer, inputLength, 0) == -1) {
@@ -99,12 +115,13 @@ void* receiveMsg(void* args) {
             break; // Go out of the loop if the receive dont work
         }
 
-        printf("Message received : %s\n", buffer);
+        puts ("Message received:");
+        puts (buffer);
 
         // Check if the loop is finished with the word "fin"
         if (compareFin(buffer) == 1){
             isRunning = 0;
-            printf("End of program\n");
+            puts ("End of program");
         }
     }
     free(buffer);
@@ -116,7 +133,7 @@ void* receiveMsg(void* args) {
 int main(int argc, char *argv[]) {
     // Check the number of arguments
     if (argc != 3) {
-        printf("Invalid number of arguments, usage:\n");
+        puts ("Invalid number of arguments, usage:");
         printf("%s IpServer Port\n", argv[0]);
         exit(0);
     }

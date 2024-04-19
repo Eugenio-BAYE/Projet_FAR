@@ -30,7 +30,15 @@ int compareFin(char * buffer){
     }
 }
 
-void* sendMsg(int client, int dS){
+struct thread_args {
+  int client;
+  int dS;
+};
+
+void* sendMsg(void * args){
+  struct thread_args * t_args = (struct thread_args *) args;
+  int client = t_args -> client;
+  int dS = t_args -> dS;
     int isRunning = 1;
     char * buffer = malloc(msgLength);
   
@@ -69,7 +77,11 @@ void* sendMsg(int client, int dS){
     return NULL;
 }
 
-void* receiveMsg(int client, int dS) {
+void* receiveMsg(void* args) {
+  struct thread_args * t_args = (struct thread_args *) args;
+  int client = t_args -> client;
+  int dS = t_args -> dS;
+
     int isRunning = 1;
     char *buffer = malloc(msgLength);
   
@@ -117,15 +129,16 @@ int main(int argc, char *argv[]) {
     int dS = connectSocket(argv[1], atoi(argv[2]) );
     int client = atoi(argv[3]);
     pthread_t thread1, thread2;
+  struct thread_args args1 = {client, dS};
     
     // Create first thread
-    if (pthread_create(&thread1, NULL, sendMsg(client, dS), NULL) != 0) {
+    if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {
         perror("pthread_create");
         return 1;
     }
     
     // Create second thread
-    if (pthread_create(&thread2, NULL, receiveMsg(client, dS), NULL) != 0) {
+    if (pthread_create(&thread2, NULL, receiveMsg, (void*)&args1) != 0) {
         perror("pthread_create");
         return 1;
     }

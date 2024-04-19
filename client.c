@@ -83,6 +83,8 @@ void* receiveMsg(int client, int dS) {
             break; // Go out of the loop if the receive dont work
         }
 
+        printf("Size received: %zu",inputLength);
+
         // Receive the message
         if (recv(dS, buffer, inputLength, 0) == -1) {
             perror("Error receiving message");

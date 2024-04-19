@@ -31,14 +31,12 @@ int compareFin(char * buffer){
 }
 
 struct thread_args {
-  int client;
-  int dS;
+    int dS;
 };
 
 void* sendMsg(void * args){
-  struct thread_args * t_args = (struct thread_args *) args;
-  int client = t_args -> client;
-  int dS = t_args -> dS;
+    struct thread_args * t_args = (struct thread_args *) args;
+    int dS = t_args -> dS;
     int isRunning = 1;
     char * buffer = malloc(msgLength);
   
@@ -78,12 +76,10 @@ void* sendMsg(void * args){
 }
 
 void* receiveMsg(void* args) {
-  struct thread_args * t_args = (struct thread_args *) args;
-  int client = t_args -> client;
-  int dS = t_args -> dS;
-
+    struct thread_args * t_args = (struct thread_args *) args;
+    int dS = t_args -> dS;
     int isRunning = 1;
-    char *buffer = malloc(msgLength);
+    char * buffer = malloc(msgLength);
   
     while(isRunning == 1) {
         printf("Ready to receive\n");
@@ -127,9 +123,8 @@ int main(int argc, char *argv[]) {
 
     // Connect the socket
     int dS = connectSocket(argv[1], atoi(argv[2]) );
-    int client = atoi(argv[3]);
     pthread_t thread1, thread2;
-  struct thread_args args1 = {client, dS};
+    struct thread_args args1 = {dS};
     
     // Create first thread
     if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {

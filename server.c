@@ -11,11 +11,27 @@
 // ------------------------------------------------------
 
 #define globalMessageLenght 256
+#define MAX_CLIENT 10
+
+int clients[MAX_CLIENT]; // Array to store client socket descriptors
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for thread-safe access to clients array
+int nbr_of_clients;
 
 struct ThreadArgs {
     int dSC_sender;
     int dSC_receiver;
 };
+
+void broadcast_message(int sender, char *message, int message_size) {
+  printf("Message broadcasting\n");
+    pthread_mutex_lock(&mutex);
+    for (int i = 0; i < MAX_CLIENT; i++) {
+        if (clients[i] != 0 && clients[i] != sender) {
+            send(clients[i], message, message_size, 0);
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+}
 
 void* handle_client(void* args) {
   struct ThreadArgs* t_args = (struct ThreadArgs*)args;
@@ -40,7 +56,7 @@ void* handle_client(void* args) {
       isRunning = 0;
       break;
     }
-    send(dSC_receiver, msg, sizeof(msg), 0);
+    broadcast_message(dSC_sender, msg, size);
     printf("Message sent\n");
     }
   }
@@ -56,36 +72,34 @@ int main(int argc, char *argv[]) {
   // Server socket connection
   int dS = new_server_socket(atoi(argv[1]));
   printf("Listening mode\n");
-  // Client 1 connections
-  int dSC1 = new_client_connection(dS);
-  // Client 2 connection 
-  int dSC2 =  new_client_connection(dS);
+  
 
-  printf("Start chatting\n");
+  while (1){
+    int dSC = new_client_connection(dS);
+    pthread_t thread;
 
-  pthread_t thread1, thread2;
-  struct ThreadArgs args1 = {dSC1, dSC2};
-  struct ThreadArgs args2 = {dSC2, dSC1};
-  char msg[msgLenght];
+    // Add client to the clients array
+    pthread_mutex_lock(&mutex);
+    for (int i = 0; i < MAX_CLIENT; i++) {
+        if (clients[i] == 0) {
+            clients[i] = dSC;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+    
+    struct ThreadArgs arg = {dSC, dSC};
 
-  if (pthread_create(&thread1, NULL, handle_client, (void*)&args1) != 0) {
-    perror("pthread_create");
+    if (pthread_create(&thread, NULL, handle_client, (void*)&arg) != 0) {
+      perror("pthread_create");
     return 1;
+  }
+    printf("New thread created\n");
   }
   
-  if (pthread_create(&thread2, NULL, handle_client, (void*)&args2) != 0){
-    perror("pthread_create");
-    return 1;
-  }
-
-  if(pthread_join(thread1, NULL) != 0 || pthread_join(thread2, NULL) != 0){
-    perror("pthread_join");
-    return 0;
-  }
   
   printf("Shutting down programm\n");
-  shutdown(dSC1, 2) ; 
-  shutdown(dSC2, 2);
+
   shutdown(dS, 2) ;
   printf("Bye bye\n");
 }

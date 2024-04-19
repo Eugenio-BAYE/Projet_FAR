@@ -25,12 +25,12 @@ int new_client_connection(int server_socket) {
  * Preconditions : Ensure messages will fit in var "msg"
  * Parameters : int dSC (descriptor of socket client), char *msg[] (char list in wich the message is returned)
  */
-void receive_from_client(int dSC, char msg[], int msgLenght){
+int receive_from_client(int dSC, char msg[], int msgLenght){
   // Empty msg of all content
   memset(msg, '\0', msgLenght);
-
-  if (recv(dSC, msg, msgLenght, 0)>=0){
-    printf("Message received from client\n");
+  int received_size = recv(dSC, msg, msgLenght, 0);
+  if (received_size>0){
+    printf("Message received from client : %s\n", msg);
   }
-  printf("receive_from_client1 : %s\n", msg);
+  return received_size;
 }

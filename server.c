@@ -18,16 +18,19 @@ struct ThreadArgs {
 };
 
 void* handle_client(void* args) {
-    struct ThreadArgs* t_args = (struct ThreadArgs*)args;
-    int dSC_sender = t_args->dSC_sender;
-    int dSC_receiver = t_args->dSC_receiver;
-    char msg[globalMessageLenght];
+  struct ThreadArgs* t_args = (struct ThreadArgs*)args;
+  int dSC_sender = t_args->dSC_sender;
+  int dSC_receiver = t_args->dSC_receiver;
+  char msg[globalMessageLenght];
+  int isRunning = 1;
 
-    while (1) {
-        receive_from_client(dSC_sender, msg, globalMessageLenght);
-        send(dSC_receiver, msg, sizeof(msg), 0);
-        printf("Message sent\n");
+  while (isRunning) {
+    if(receive_from_client(dSC_sender, msg, globalMessageLenght) <= 0) {
+      isRunning = 0;
     }
+    send(dSC_receiver, msg, sizeof(msg), 0);
+    printf("Message sent\n");
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -61,11 +64,12 @@ int main(int argc, char *argv[]) {
     perror("pthread_create");
     return 1;
   }
-  
-  while(1){
 
+  if(pthread_join(thread1, NULL) != 0 || pthread_join(thread2, NULL) != 0){
+    perror("pthread_join");
+    return 0;
   }
-
+  
   printf("Shutting down programm\n");
   shutdown(dSC1, 2) ; 
   shutdown(dSC2, 2);

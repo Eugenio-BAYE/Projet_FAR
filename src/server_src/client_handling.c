@@ -25,7 +25,7 @@ int new_client_connection(int server_socket) {
  * Preconditions : Ensure messages will fit in var "msg"
  * Parameters : int dSC (descriptor of socket client), char *msg[] (char list in wich the message is returned)
  */
-int receive_from_client(int dSC, char msg[], int msgLenght){
+int receive_message(int dSC, char msg[], int msgLenght){
   // Empty msg of all content
   memset(msg, '\0', msgLenght);
   int received_size = recv(dSC, msg, msgLenght, 0);
@@ -34,3 +34,24 @@ int receive_from_client(int dSC, char msg[], int msgLenght){
   }
   return received_size;
 }
+
+/* receive_from_client : Get a message from a client in msg
+ * Preconditions : Ensure messages will fit in var "msg"
+ * Parameters : int dSC (descriptor of socket client), char *msg[] (char list in wich the message is returned)
+ */
+
+int receive_msg_size(int dSC, size_t *size) {
+    size_t message_size;
+    printf("Create message size\n");
+    int received_size = recv(dSC, &message_size, sizeof(message_size), 0);
+    if (received_size > 0) {
+        printf("Message size received: %d\n", (int)message_size);
+        *size = message_size;
+    } else if (received_size == 0) {
+        printf("Client disconnected.\n");
+    } else {
+        perror("recv");
+    }
+    return received_size;
+}
+

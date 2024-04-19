@@ -21,15 +21,28 @@ void* handle_client(void* args) {
   struct ThreadArgs* t_args = (struct ThreadArgs*)args;
   int dSC_sender = t_args->dSC_sender;
   int dSC_receiver = t_args->dSC_receiver;
-  char msg[globalMessageLenght];
   int isRunning = 1;
+  size_t size = 0;
 
   while (isRunning) {
-    if(receive_from_client(dSC_sender, msg, globalMessageLenght) <= 0) {
+    printf("Start listening\n");
+    if(0){
+      printf("Wrong size\n");
+      break;
+    }
+    printf("Sized received : %zu\n", size);
+    size = 256;
+    if (size >= 0 && size < 1024){
+      printf("Allocating next msg\n");
+    
+    char msg[256];
+    if(receive_message(dSC_sender, msg, size) <= 0) {
       isRunning = 0;
+      break;
     }
     send(dSC_receiver, msg, sizeof(msg), 0);
     printf("Message sent\n");
+    }
   }
 }
 

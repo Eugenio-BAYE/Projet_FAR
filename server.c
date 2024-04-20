@@ -36,6 +36,21 @@ void broadcast_message(int sender, char *message, int message_size) {
   }
   pthread_mutex_unlock(&mutex);
 }
+
+void broadcast_size(int sender, size_t inputLength) {
+    pthread_mutex_lock(&mutex); // Lock mutex for thread safety
+    for (int i = 0; i < MAX_CLIENT; i++) {
+        if (clients[i] != 0 && clients[i] != sender) {
+            if (send(clients[i], &inputLength, sizeof(size_t), 0) == -1) {
+                perror("Error sending size");
+                // Handle error if needed
+            } else {
+                puts("Input length sent");
+            }
+        }
+    }
+    pthread_mutex_unlock(&mutex); // Unlock mutex
+}
 /* handle_client : Thread-dedicated function to handle each client
  * Precondition : No more than <MAX_CLIENT> clients to handle
  * Parameters : struct handle_client_args -> int dSC_sender (file descriptor of the sender client)
@@ -46,8 +61,32 @@ void* handle_client(void* args) {
   int dSC_sender = t_args->dSC_sender;
 
   while (1) {
-    char msg[globalMessageLenght];
+    puts ("Ready to receive");
+    size_t inputLength;
 
+    // Receive the size of the message
+    if (recv(dSC_sender, &inputLength, sizeof(size_t), 0) <= 0) {
+      pthread_mutex_lock(&mutex);
+      for (int i = 0; i < MAX_CLIENT; i++) {
+        if (clients[i] == dSC_sender) {
+          clients[i] = 0;
+          break;
+        }
+      }
+      nbr_of_clients--;
+      pthread_mutex_unlock(&mutex);
+      close(dSC_sender);
+      printf("Client disconnected\n");
+      pthread_exit(NULL);
+      break;// Go out of the loop if the receive dont work
+    }
+    char lengthString[20]; // Create a char for create a String of the size
+    snprintf(lengthString, 20, "%zu", inputLength); // Convert it
+    puts ("Size received:");
+    puts (lengthString); //Print it
+
+    broadcast_size(dSC_sender, inputLength);
+    char * msg = malloc(globalMessageLenght);
     if(receive_message(dSC_sender, msg, globalMessageLenght) <= 0) {
       pthread_mutex_lock(&mutex);
       for (int i = 0; i < MAX_CLIENT; i++) {

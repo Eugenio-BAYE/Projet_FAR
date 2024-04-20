@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     if (pthread_create(&thread1, NULL, sendMsg(client, dS), NULL) != 0) {
         perror("pthread_create");
         return 1;
-    }
+
     
     // Create second thread
     if (pthread_create(&thread2, NULL, receiveMsg(client, dS), NULL) != 0) {

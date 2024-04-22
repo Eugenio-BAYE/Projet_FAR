@@ -86,8 +86,8 @@ void* handle_client(void* args) {
     puts (lengthString); //Print it
 
     broadcast_size(dSC_sender, inputLength);
-    char * msg = malloc(globalMessageLenght);
-    if(receive_message(dSC_sender, msg, globalMessageLenght) <= 0) {
+    char * msg = malloc(inputLength);
+    if(receive_message(dSC_sender, msg, inputLength) <= 0) {
       pthread_mutex_lock(&mutex);
       for (int i = 0; i < MAX_CLIENT; i++) {
         if (clients[i] == dSC_sender) {
@@ -102,7 +102,7 @@ void* handle_client(void* args) {
       pthread_exit(NULL);
       break;
     }
-    broadcast_message(dSC_sender, msg, globalMessageLenght);
+    broadcast_message(dSC_sender, msg, inputLength);
   }
 }
 

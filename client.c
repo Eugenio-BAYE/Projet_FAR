@@ -55,16 +55,18 @@ void* sendMsg(void * args){
         if (fgets(buffer, msgLength, stdin) != NULL) {
             puts ("You have entered:") ;
             puts (buffer);
-            size_t inputLength = strlen(buffer); // -1 to exclude the newline character ('\n')
+            size_t inputLength = strlen(buffer)+1; // +1 to include the newline character ('\n')
             char lengthString[20]; // Create a char for create a String of the size
             snprintf(lengthString, 20, "%zu", inputLength-1); // Convert it
             puts ("Number of characters entered:");
             puts (lengthString); //Print it
 
-            if (send(dS, &inputLength, sizeof(size_t), 0) == -1) {
+            int receiveMessage = send(dS, &inputLength, sizeof(size_t), 0);
+            if (receiveMessage == -1) {
                 perror("Error sending size");
-                break; // Go out of the loop if the send dont work
+                pthread_exit(0);
             }
+
             puts ("Input length sent");
 
 
@@ -99,20 +101,32 @@ void* receiveMsg(void* args) {
         puts ("Ready to receive");
         size_t inputLength;
 
+        int receiveSize = recv(dS, &inputLength, sizeof(size_t), 0);
         // Receive the size of the message
-        if (recv(dS, &inputLength, sizeof(size_t), 0) == -1) {
+        if(receiveSize == -1) {
             perror("Error receiving size");
-            break; // Go out of the loop if the receive dont work
+            pthread_exit(0);
         }
+        if(receiveSize == 0){
+            puts("Error, disconnected when receiving size");
+            pthread_exit(0);
+        }
+
+        char * buffer = malloc(inputLength);
         char lengthString[20]; // Create a char for create a String of the size
         snprintf(lengthString, 20, "%zu", inputLength); // Convert it
         puts ("Size received:");
         puts (lengthString); //Print it
 
+        int receiveMessage = recv(dS, buffer, inputLength, 0);
         // Receive the message
-        if (recv(dS, buffer, inputLength, 0) == -1) {
+        if (receiveMessage == -1) {
             perror("Error receiving message");
-            break; // Go out of the loop if the receive dont work
+            pthread_exit(0);
+        }
+        if(receiveMessage == 0){
+            puts("Error, disconnected when receiving message");
+            pthread_exit(0);
         }
 
         puts ("Message received:");

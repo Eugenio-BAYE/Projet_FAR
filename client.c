@@ -11,6 +11,12 @@ struct thread_args {
     int dS;
 };
 
+/* connectSocket : connect the socket to the server put in parameter 
+ * Parameters: - char *arg1: A pointer to a string representing the server's IP address in IPv4 format.
+ *             - int arg2: An integer representing the server's port number.
+ * Errors: If the socket cannot be created and if the connection fails, exits with 0.
+ * Returns: The socket descriptor (int) on successful connection.
+ */
 int connectSocket(char * arg1, int arg2 ){
     // Create the socket
     int dS = socket(PF_INET, SOCK_STREAM, 0);
@@ -33,6 +39,12 @@ int connectSocket(char * arg1, int arg2 ){
     return dS;
 }
 
+/* compareFin : Checks if the provided buffer matches the specific word "fin" followed by \n. 
+ * Preconditions: the buffer should not be a NULL pointer
+ * Parameters: char *buffer: A pointer to a character array
+ * Returns: - 1 if the buffer contains exactly "fin\n".
+ *          - 0 (int): If the buffer contains any other string.
+ */
 int compareFin(char * buffer){
     // Check if the char * contains only the word "fin", return 1 if it contains only "fin" or return 0 otherwise
     if(strcmp(buffer, "fin\n") == 0){
@@ -43,6 +55,11 @@ int compareFin(char * buffer){
     }
 }
 
+/** sendMsg : Send messages from the user to a server over a socket.
+ * Parameters: void *args: Pointer to a 'thread_args' structure which the socket descriptor 'dS'.
+ * Errors: If sending the size or message fails or the socket disconnect, it will print an error and exit the thread.
+ * Returns: NULL on exit, either after an error or after a termination command ("fin").
+ */
 void* sendMsg(void * args){
     struct thread_args * t_args = (struct thread_args *) args;
     int dS = t_args -> dS;
@@ -61,18 +78,26 @@ void* sendMsg(void * args){
             puts ("Number of characters entered:");
             puts (lengthString); //Print it
 
-            int receiveMessage = send(dS, &inputLength, sizeof(size_t), 0);
-            if (receiveMessage == -1) {
+            int sendSize = send(dS, &inputLength, sizeof(size_t), 0);
+            if (sendSize == -1) {
                 perror("Error sending size");
                 pthread_exit(0);
             }
-
+            if (sendSize == 0) {
+            puts("Error, disconnected when sending size");
+                pthread_exit(0);
+            }
             puts ("Input length sent");
 
 
-            if (send(dS, buffer, inputLength, 0) == -1) {
+            int sendMessage = send(dS, buffer, inputLength, 0);
+            if (sendMessage == -1) {
                 perror("Error sending message");
-                break; // Go out of the loop if the send dont work
+                pthread_exit(0);
+            }
+            if (sendMessage == 0) {
+            puts("Error, disconnected when sending message");
+                pthread_exit(0);
             }
             puts ("Message sent");
             
@@ -87,10 +112,14 @@ void* sendMsg(void * args){
         }
     }
     free(buffer);
-    shutdown(dS, 2); // Close the connection
     return NULL;
 }
 
+/** receiveMsg : Receive messages from the user to a server over a socket.
+ * Parameters: void *args: Pointer to a 'thread_args' structure which the socket descriptor 'dS'.
+ * Errors: If receiving the size or message fails or the socket disconnect, it will print an error and exit the thread.
+ * Returns: NULL on exit, either after an error or after a termination command ("fin").
+ */
 void* receiveMsg(void* args) {
     struct thread_args * t_args = (struct thread_args *) args;
     int dS = t_args -> dS;
@@ -101,13 +130,13 @@ void* receiveMsg(void* args) {
         puts ("Ready to receive");
         size_t inputLength;
 
-        int receiveSize = recv(dS, &inputLength, sizeof(size_t), 0);
         // Receive the size of the message
-        if(receiveSize == -1) {
+        int receiveSize = recv(dS, &inputLength, sizeof(size_t), 0);
+        if (receiveSize == -1) {
             perror("Error receiving size");
             pthread_exit(0);
         }
-        if(receiveSize == 0){
+        if (receiveSize == 0) {
             puts("Error, disconnected when receiving size");
             pthread_exit(0);
         }
@@ -118,8 +147,8 @@ void* receiveMsg(void* args) {
         puts ("Size received:");
         puts (lengthString); //Print it
 
-        int receiveMessage = recv(dS, buffer, inputLength, 0);
         // Receive the message
+        int receiveMessage = recv(dS, buffer, inputLength, 0);
         if (receiveMessage == -1) {
             perror("Error receiving message");
             pthread_exit(0);
@@ -139,7 +168,6 @@ void* receiveMsg(void* args) {
         }
     }
     free(buffer);
-    shutdown(dS, 2); // Close the connection
     return NULL;
 }
 
@@ -159,22 +187,19 @@ int main(int argc, char *argv[]) {
     
     // Create first thread
     if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {
-        perror("pthread_create");
+        perror("pthreadSend_create");
         return 1;
     }
     
     // Create second thread
     if (pthread_create(&thread2, NULL, receiveMsg, (void*)&args1) != 0) {
-        perror("pthread_create");
+        perror("pthreadReceive_create");
         return 1;
     }
     
     // Wait the end of threads
-    if (pthread_join(thread1, NULL) != 0) {
-        perror("pthread_join");
-        return 1;
-    }
-    if (pthread_join(thread2, NULL) != 0) {
+    if ((pthread_join(thread1, NULL) != 0) || (pthread_join(thread2, NULL) != 0)) {
+        shutdown(dS, 2); // Close the connection
         perror("pthread_join");
         return 1;
     }

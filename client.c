@@ -57,7 +57,7 @@ void* sendMsg(void * args){
             puts (buffer);
             size_t inputLength = strlen(buffer); // -1 to exclude the newline character ('\n')
             char lengthString[20]; // Create a char for create a String of the size
-            snprintf(lengthString, 20, "%zu", inputLength); // Convert it
+            snprintf(lengthString, 20, "%zu", inputLength-1); // Convert it
             puts ("Number of characters entered:");
             puts (lengthString); //Print it
 
@@ -68,7 +68,7 @@ void* sendMsg(void * args){
             puts ("Input length sent");
 
 
-            if (send(dS, buffer, inputLength+1, 0) == -1) {
+            if (send(dS, buffer, inputLength, 0) == -1) {
                 perror("Error sending message");
                 break; // Go out of the loop if the send dont work
             }

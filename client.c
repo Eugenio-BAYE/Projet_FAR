@@ -52,6 +52,7 @@ int connectSocket(char * arg1, int arg2 ){
     return dS;
 }
 
+
 /* compareFin : Checks if the provided buffer matches the specific word "fin" followed by \n. 
  * Preconditions: the buffer should not be a NULL pointer
  * Parameters: char *buffer: A pointer to a character array
@@ -195,6 +196,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Connect the socket
+
     dS = connectSocket(argv[1], atoi(argv[2]) );
     signal(SIGINT, handle_sigint);
 
@@ -205,7 +207,7 @@ int main(int argc, char *argv[]) {
     if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {
         perror("pthreadSend_create");
         return 1;
-    }
+
     
     // Create second thread
     if (pthread_create(&thread2, NULL, receiveMsg, (void*)&args1) != 0) {

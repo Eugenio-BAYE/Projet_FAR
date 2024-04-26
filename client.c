@@ -7,29 +7,16 @@
 #include <pthread.h>
 #define msgLength 256
 
-struct thread_args {
-    int dS;
-};
-
 int connectSocket(char * arg1, int arg2 ){
-    // Create the socket
+    // Connect the socket and the server
     int dS = socket(PF_INET, SOCK_STREAM, 0);
-    if (dS == -1){
-        perror("Error creating socket");
-        exit(0);
-    }
-    // Create the adress
     struct sockaddr_in aS;
     aS.sin_family = AF_INET;
     inet_pton(AF_INET,arg1,&(aS.sin_addr)) ;
     aS.sin_port = htons(arg2) ;
     socklen_t lgA = sizeof(struct sockaddr_in) ;
-    // Connect the socket
-    if (connect(dS, (struct sockaddr *) &aS, lgA) == -1){
-        perror("Error connecting socket");
-        exit(0);
-    }
-    puts ("Socket connected");
+    connect(dS, (struct sockaddr *) &aS, lgA);
+    printf("Socket connected\n");
     return dS;
 }
 
@@ -43,45 +30,38 @@ int compareFin(char * buffer){
     }
 }
 
-void* sendMsg(void * args){
-    struct thread_args * t_args = (struct thread_args *) args;
-    int dS = t_args -> dS;
+void* sendMsg(int client, int dS){
     int isRunning = 1;
     char * buffer = malloc(msgLength);
   
     while(isRunning == 1){
         // Read the keyboard enter
-        puts("Please enter a string of characters :");
+        printf("Please enter a string of characters : \n");
         if (fgets(buffer, msgLength, stdin) != NULL) {
-            puts ("You have entered:") ;
-            puts (buffer);
+            printf("You have entered : %s\n", buffer);
             size_t inputLength = strlen(buffer); // -1 to exclude the newline character ('\n')
-            char lengthString[20]; // Create a char for create a String of the size
-            snprintf(lengthString, 20, "%zu", inputLength); // Convert it
-            puts ("Number of characters entered:");
-            puts (lengthString); //Print it
+            printf("Number of characters entered: %zu\n", inputLength);
 
             if (send(dS, &inputLength, sizeof(size_t), 0) == -1) {
                 perror("Error sending size");
                 break; // Go out of the loop if the send dont work
             }
-            puts ("Input length sent");
-
+            printf("Input length sent \n");
 
             if (send(dS, buffer, inputLength+1, 0) == -1) {
                 perror("Error sending message");
                 break; // Go out of the loop if the send dont work
             }
-            puts ("Message sent");
+            printf("Message sent \n");
             
             // Check if the loop is finished with the word "fin"
             if (compareFin(buffer) == 1){
                 isRunning = 0;
-                puts ("End of program");
+                printf("End of program\n");
             }
         } 
         else {
-            puts ("Error reading or end of file detected");
+            printf("Error reading or end of file detected.\n");
         }
     }
     free(buffer);
@@ -89,79 +69,63 @@ void* sendMsg(void * args){
     return NULL;
 }
 
-   
-void* receiveMsg(void* args) {
-  struct thread_args * t_args = (struct thread_args *) args;
-  int dS = t_args -> dS;
-  int isRunning = 1;
-  char * buffer = malloc(msgLength);
+void* receiveMsg(int client, int dS) {
+    int isRunning = 1;
+    char *buffer = malloc(msgLength);
+  
+    while(isRunning == 1) {
+        printf("Ready to receive\n");
+        size_t inputLength;
 
-  while(isRunning == 1) {
-    puts("Ready to receive");
-    size_t inputLength;
+        // Receive the size of the message
+        if (recv(dS, &inputLength, sizeof(size_t), 0) == -1) {
+            perror("Error receiving size");
+            break; // Go out of the loop if the receive dont work
+        }
 
-    // Receive the size of the message
-    if (recv(dS, &inputLength, sizeof(size_t), 0) <= 0) {
-      printf("Client disconnected\n");
-      break; // Quitter la boucle si la réception échoue
+        printf("Size received: %zu",inputLength);
+
+        // Receive the message
+        if (recv(dS, buffer, inputLength, 0) == -1) {
+            perror("Error receiving message");
+            break; // Go out of the loop if the receive dont work
+        }
+
+        printf("Message received : %s\n", buffer);
+
+        // Check if the loop is finished with the word "fin"
+        if (compareFin(buffer) == 1){
+            isRunning = 0;
+            printf("End of program\n");
+        }
     }
-
-    // Si la taille du message est 0, cela signifie que le client a fermé la connexion sans envoyer de message
-    if (inputLength == 0) {
-      printf("Client disconnected without sending a message\n");
-      break;
-    }
-
-    char lengthString[20]; // Create a char for creating a String of the size
-    snprintf(lengthString, 20, "%zu", inputLength); // Convert it
-    puts("Size received:");
-    puts(lengthString); // Print it
-
-    // Receive the message
-    if (recv(dS, buffer, inputLength, 0) <= 0) {
-      perror("Error receiving message");
-      break; // Quitter la boucle si la réception échoue
-    }
-
-    puts("Message received:");
-    puts(buffer);
-
-    // Check if the loop is finished with the word "fin"
-    if (strcmp(buffer, "fin") == 0) {
-      puts("End of program");
-      break;
-    }
-  }
-
-  free(buffer);
-  shutdown(dS, 2); // Fermer la connexion
-  return NULL;
+    free(buffer);
+    shutdown(dS, 2); // Close the connection
+    return NULL;
 }
-
-
 
 
 int main(int argc, char *argv[]) {
     // Check the number of arguments
     if (argc != 3) {
-        puts ("Invalid number of arguments, usage:");
+        printf("Invalid number of arguments, usage:\n");
         printf("%s IpServer Port\n", argv[0]);
         exit(0);
     }
 
     // Connect the socket
     int dS = connectSocket(argv[1], atoi(argv[2]) );
+    int client = atoi(argv[3]);
     pthread_t thread1, thread2;
-    struct thread_args args1 = {dS};
     
     // Create first thread
-    if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {
+    if (pthread_create(&thread1, NULL, sendMsg(client, dS), NULL) != 0) {
         perror("pthread_create");
         return 1;
     }
     
     // Create second thread
-    if (pthread_create(&thread2, NULL, receiveMsg, (void*)&args1) != 0) {
+    if (pthread_create(&thread2, NULL, receiveMsg(client, dS), NULL) != 0) {
         perror("pthread_create");
         return 1;
     }

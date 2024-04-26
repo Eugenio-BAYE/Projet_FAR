@@ -5,87 +5,162 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+
 // Include files
 #include "src/server_src/client_handling.h" 
 #include "src/server_src/server_handling.h"
 // ------------------------------------------------------
 
-#define globalMessageLenght 256
+#define MAX_CLIENT 10
+#define handle_error(msg) \
+           do { perror(msg); exit(EXIT_FAILURE); } while (0)
+// ------------------------------------------------------
 
-struct ThreadArgs {
-    int dSC_sender;
-    int dSC_receiver;
+int clients[MAX_CLIENT]; // Array to store client socket descriptors
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for thread-safe access to clients array
+int nbr_of_clients = 0;
+
+struct handle_client_args {
+  int dSC_sender;
 };
 
+ /* broadcast_message : Send a message to every client except the one in parameter
+  * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
+  * Parameters : int sender(file descriptor of the sender), char* message(message to broadcast to the list), int message_size (size of the message)
+  * Returns : Nothing
+  */
+void broadcast_message(int sender, char *message, int message_size) {
+  printf("Message broadcasting : %s\n", message);
+  pthread_mutex_lock(&mutex); // Lock mutex for thread safety
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i] != 0 && clients[i] != sender) {
+      send(clients[i], message, message_size, 0);
+    }
+  }
+  pthread_mutex_unlock(&mutex);
+}
+ /* broadcast_size: Send the size to every client except the one in parameter
+  * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
+  * Parameters : int sender(file descriptor of the sender), size_t inputLength (size to broadcast to the list) 
+  * Returns : Nothing
+  */
+void broadcast_size(int sender, size_t inputLength) {
+  pthread_mutex_lock(&mutex); // Lock mutex for thread safety
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i] != 0 && clients[i] != sender) {
+      if (send(clients[i], &inputLength, sizeof(size_t), 0) == -1) {
+        perror("Error sending size");
+        // Handle error if needed
+      } else {
+        puts("Input length sent");
+      }
+    }
+  }
+  pthread_mutex_unlock(&mutex); // Unlock mutex
+}
+/* handle_client : Thread-dedicated function to handle each client
+ * Precondition : No more than <MAX_CLIENT> clients to handle
+ * Parameters : struct handle_client_args -> int dSC_sender (file descriptor of the sender client)
+ * Returns : Nothing
+ */ 
 void* handle_client(void* args) {
-  struct ThreadArgs* t_args = (struct ThreadArgs*)args;
+  struct handle_client_args* t_args = (struct handle_client_args*)args;
   int dSC_sender = t_args->dSC_sender;
-  int dSC_receiver = t_args->dSC_receiver;
-  int isRunning = 1;
-  size_t size = 0;
 
-  while (isRunning) {
-    printf("Start listening\n");
-    if(0){
-      printf("Wrong size\n");
+  while (1) {
+    puts ("Ready to receive");
+    size_t inputLength;
+
+    // Receive the size of the message
+    if (recv(dSC_sender, &inputLength, sizeof(size_t), 0) <= 0) {
+      // Erase client from list and stops the thread if it disconnects
+      pthread_mutex_lock(&mutex);
+      for (int i = 0; i < MAX_CLIENT; i++) {
+        if (clients[i] == dSC_sender) {
+          clients[i] = 0;
+          break;
+        }
+      }
+      nbr_of_clients--;
+      pthread_mutex_unlock(&mutex);
+      close(dSC_sender);
+      printf("Client disconnected\n");
+      pthread_exit(NULL);
+      break;// Go out of the loop if the receive dont work
+    }
+    char lengthString[20]; // Create a char for create a String of the size
+    snprintf(lengthString, 20, "%zu", inputLength); // Convert it
+    puts ("Size received:");
+    puts (lengthString); //Print it
+
+    broadcast_size(dSC_sender, inputLength);
+    char * msg = malloc(inputLength);
+    if(receive_message(dSC_sender, msg, inputLength) <= 0) {
+      pthread_mutex_lock(&mutex);
+      for (int i = 0; i < MAX_CLIENT; i++) {
+        if (clients[i] == dSC_sender) {
+          clients[i] = 0;
+          break;
+        }
+      }
+      nbr_of_clients--;
+      pthread_mutex_unlock(&mutex);
+      close(dSC_sender);
+      printf("Client disconnected\n");
+      pthread_exit(NULL);
       break;
     }
-    printf("Sized received : %zu\n", size);
-    size = 256;
-    if (size >= 0 && size < 1024){
-      printf("Allocating next msg\n");
-    
-    char msg[256];
-    if(receive_message(dSC_sender, msg, size) <= 0) {
-      isRunning = 0;
-      break;
-    }
-    send(dSC_receiver, msg, sizeof(msg), 0);
-    printf("Message sent\n");
-    }
+    broadcast_message(dSC_sender, msg, inputLength);
   }
 }
 
 int main(int argc, char *argv[]) {
-
-  // Global to local variable to enhance performance
-  int msgLenght = globalMessageLenght; 
+  if(argc != 2){
+    printf("Usage : %s <port>\n", argv[0]);
+    perror("Can't run program");
+    exit(EXIT_FAILURE);
+  }
 
   printf("Starting program\n");
 
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    clients[i] = 0;
+  }
+
   // Server socket connection
   int dS = new_server_socket(atoi(argv[1]));
-  printf("Listening mode\n");
-  // Client 1 connections
-  int dSC1 = new_client_connection(dS);
-  // Client 2 connection 
-  int dSC2 =  new_client_connection(dS);
+  printf("Waiting for clients\n");
 
-  printf("Start chatting\n");
+  while (1){
+    int dSC = new_client_connection(dS);
+    while(nbr_of_clients>9){
+      perror("Too much clients to handle");
+      exit(EXIT_FAILURE);
+    }
+    
+    pthread_mutex_lock(&mutex);
+    nbr_of_clients++;
+    pthread_mutex_unlock(&mutex);
+    pthread_t thread;
+    // Add client to the clients array
+    pthread_mutex_lock(&mutex);
+    for (int i = 0; i < MAX_CLIENT; i++) {
+      if (clients[i] == 0) {
+        clients[i] = dSC;
+        break;
+      }
+    }
+    pthread_mutex_unlock(&mutex);
 
-  pthread_t thread1, thread2;
-  struct ThreadArgs args1 = {dSC1, dSC2};
-  struct ThreadArgs args2 = {dSC2, dSC1};
-  char msg[msgLenght];
+    struct handle_client_args arg = {dSC};
 
-  if (pthread_create(&thread1, NULL, handle_client, (void*)&args1) != 0) {
-    perror("pthread_create");
-    return 1;
+    if (pthread_create(&thread, NULL, handle_client, (void*)&arg) != 0) {
+      perror("pthread_create");
+      return 1;
+    }
   }
-  
-  if (pthread_create(&thread2, NULL, handle_client, (void*)&args2) != 0){
-    perror("pthread_create");
-    return 1;
-  }
 
-  if(pthread_join(thread1, NULL) != 0 || pthread_join(thread2, NULL) != 0){
-    perror("pthread_join");
-    return 0;
-  }
-  
   printf("Shutting down programm\n");
-  shutdown(dSC1, 2) ; 
-  shutdown(dSC2, 2);
-  shutdown(dS, 2) ;
+  close(dS) ;
   printf("Bye bye\n");
 }

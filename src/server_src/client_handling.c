@@ -10,14 +10,10 @@
  * Postconditions : Blocking function, can't continue without a new user connecting
  */
 int new_client_connection(int server_socket) {
-
   struct sockaddr_in client_addr;
   socklen_t client_addr_len = sizeof(client_addr);
-
-  // Client connection :
   int client_socket = accept(server_socket, (struct sockaddr*) &client_addr, &client_addr_len);
   printf("New client connected\n");
-
   return client_socket;
 }
 

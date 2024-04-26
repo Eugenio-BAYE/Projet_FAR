@@ -5,15 +5,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+
 // Include files
 #include "src/server_src/client_handling.h" 
 #include "src/server_src/server_handling.h"
 // ------------------------------------------------------
 
-#define globalMessageLenght 256
 #define MAX_CLIENT 10
-
+#define handle_error(msg) \
+           do { perror(msg); exit(EXIT_FAILURE); } while (0)
 // ------------------------------------------------------
+
 int clients[MAX_CLIENT]; // Array to store client socket descriptors
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for thread-safe access to clients array
 int nbr_of_clients = 0;
@@ -21,6 +23,7 @@ int nbr_of_clients = 0;
 struct handle_client_args {
   int dSC_sender;
 };
+
  /* broadcast_message : Send a message to every client except the one in parameter
   * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
   * Parameters : int sender(file descriptor of the sender), char* message(message to broadcast to the list), int message_size (size of the message)
@@ -28,7 +31,7 @@ struct handle_client_args {
   */
 void broadcast_message(int sender, char *message, int message_size) {
   printf("Message broadcasting : %s\n", message);
-  pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&mutex); // Lock mutex for thread safety
   for (int i = 0; i < MAX_CLIENT; i++) {
     if (clients[i] != 0 && clients[i] != sender) {
       send(clients[i], message, message_size, 0);
@@ -36,20 +39,24 @@ void broadcast_message(int sender, char *message, int message_size) {
   }
   pthread_mutex_unlock(&mutex);
 }
-
+ /* broadcast_size: Send the size to every client except the one in parameter
+  * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
+  * Parameters : int sender(file descriptor of the sender), size_t inputLength (size to broadcast to the list) 
+  * Returns : Nothing
+  */
 void broadcast_size(int sender, size_t inputLength) {
-    pthread_mutex_lock(&mutex); // Lock mutex for thread safety
-    for (int i = 0; i < MAX_CLIENT; i++) {
-        if (clients[i] != 0 && clients[i] != sender) {
-            if (send(clients[i], &inputLength, sizeof(size_t), 0) == -1) {
-                perror("Error sending size");
-                // Handle error if needed
-            } else {
-                puts("Input length sent");
-            }
-        }
+  pthread_mutex_lock(&mutex); // Lock mutex for thread safety
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i] != 0 && clients[i] != sender) {
+      if (send(clients[i], &inputLength, sizeof(size_t), 0) == -1) {
+        perror("Error sending size");
+        // Handle error if needed
+      } else {
+        puts("Input length sent");
+      }
     }
-    pthread_mutex_unlock(&mutex); // Unlock mutex
+  }
+  pthread_mutex_unlock(&mutex); // Unlock mutex
 }
 /* handle_client : Thread-dedicated function to handle each client
  * Precondition : No more than <MAX_CLIENT> clients to handle
@@ -66,6 +73,7 @@ void* handle_client(void* args) {
 
     // Receive the size of the message
     if (recv(dSC_sender, &inputLength, sizeof(size_t), 0) <= 0) {
+      // Erase client from list and stops the thread if it disconnects
       pthread_mutex_lock(&mutex);
       for (int i = 0; i < MAX_CLIENT; i++) {
         if (clients[i] == dSC_sender) {

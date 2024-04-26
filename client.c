@@ -5,11 +5,24 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 #define msgLength 256
+
+int dS;
 
 struct thread_args {
     int dS;
 };
+
+/* handle_sigint : Handles the SIGINT signal (Ctrl-C interruption) by shutting down the specified socket and exiting the program.
+ * Parameters: - int sig: The signal number received by the handler.
+ * Returns: None, as the function terminates the program by calling exit(1).
+ */
+void handle_sigint(int sig) {
+    printf("Caught signal %d, shutting down socket\n", sig);
+    shutdown(dS, 2);
+    exit(1);
+}
 
 /* connectSocket : connect the socket to the server put in parameter 
  * Parameters: - char *arg1: A pointer to a string representing the server's IP address in IPv4 format.
@@ -172,6 +185,7 @@ void* receiveMsg(void* args) {
 }
 
 
+
 int main(int argc, char *argv[]) {
     // Check the number of arguments
     if (argc != 3) {
@@ -181,10 +195,12 @@ int main(int argc, char *argv[]) {
     }
 
     // Connect the socket
-    int dS = connectSocket(argv[1], atoi(argv[2]) );
+    dS = connectSocket(argv[1], atoi(argv[2]) );
+    signal(SIGINT, handle_sigint);
+
     pthread_t thread1, thread2;
     struct thread_args args1 = {dS};
-    
+
     // Create first thread
     if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {
         perror("pthreadSend_create");

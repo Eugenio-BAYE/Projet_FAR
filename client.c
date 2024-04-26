@@ -7,18 +7,9 @@
 #include <pthread.h>
 #define msgLength 256
 
-int connectSocket(char * arg1, int arg2 ){
-    // Connect the socket and the server
-    int dS = socket(PF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in aS;
-    aS.sin_family = AF_INET;
-    inet_pton(AF_INET,arg1,&(aS.sin_addr)) ;
-    aS.sin_port = htons(arg2) ;
-    socklen_t lgA = sizeof(struct sockaddr_in) ;
-    connect(dS, (struct sockaddr *) &aS, lgA);
-    printf("Socket connected\n");
-    return dS;
-}
+#include "src/client_src/server_handling.h"
+
+
 
 int compareFin(char * buffer){
     // Check if the char * contains only the word "fin", return 1 if it contains only "fin" or return 0 otherwise
@@ -114,7 +105,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Connect the socket
-    int dS = connectSocket(argv[1], atoi(argv[2]) );
+    int dS = connect_socket(argv[1], atoi(argv[2]) );
     int client = atoi(argv[3]);
     pthread_t thread1, thread2;
     
@@ -141,4 +132,5 @@ int main(int argc, char *argv[]) {
     }
     
     return 0;
+}
 }

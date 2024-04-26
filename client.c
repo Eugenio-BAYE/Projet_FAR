@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+
+#include "src/client_src/server_handling.h"
+#include "src/client_src/client_utils.h"
+
 #define msgLength 256
 
 int dS;
@@ -24,50 +28,6 @@ void handle_sigint(int sig) {
     exit(1);
 }
 
-/* connectSocket : connect the socket to the server put in parameter 
- * Parameters: - char *arg1: A pointer to a string representing the server's IP address in IPv4 format.
- *             - int arg2: An integer representing the server's port number.
- * Errors: If the socket cannot be created and if the connection fails, exits with 0.
- * Returns: The socket descriptor (int) on successful connection.
- */
-int connectSocket(char * arg1, int arg2 ){
-    // Create the socket
-    int dS = socket(PF_INET, SOCK_STREAM, 0);
-    if (dS == -1){
-        perror("Error creating socket");
-        exit(0);
-    }
-    // Create the adress
-    struct sockaddr_in aS;
-    aS.sin_family = AF_INET;
-    inet_pton(AF_INET,arg1,&(aS.sin_addr)) ;
-    aS.sin_port = htons(arg2) ;
-    socklen_t lgA = sizeof(struct sockaddr_in) ;
-    // Connect the socket
-    if (connect(dS, (struct sockaddr *) &aS, lgA) == -1){
-        perror("Error connecting socket");
-        exit(0);
-    }
-    puts ("Socket connected");
-    return dS;
-}
-
-
-/* compareFin : Checks if the provided buffer matches the specific word "fin" followed by \n. 
- * Preconditions: the buffer should not be a NULL pointer
- * Parameters: char *buffer: A pointer to a character array
- * Returns: - 1 if the buffer contains exactly "fin\n".
- *          - 0 (int): If the buffer contains any other string.
- */
-int compareFin(char * buffer){
-    // Check if the char * contains only the word "fin", return 1 if it contains only "fin" or return 0 otherwise
-    if(strcmp(buffer, "fin\n") == 0){
-        return 1;
-    }
-    else{
-        return 0;
-    }
-}
 
 /** sendMsg : Send messages from the user to a server over a socket.
  * Parameters: void *args: Pointer to a 'thread_args' structure which the socket descriptor 'dS'.
@@ -197,7 +157,7 @@ int main(int argc, char *argv[]) {
 
     // Connect the socket
 
-    dS = connectSocket(argv[1], atoi(argv[2]) );
+    dS = connect_socket(argv[1], atoi(argv[2]) );
     signal(SIGINT, handle_sigint);
 
     pthread_t thread1, thread2;
@@ -207,7 +167,7 @@ int main(int argc, char *argv[]) {
     if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {
         perror("pthreadSend_create");
         return 1;
-
+    }
     
     // Create second thread
     if (pthread_create(&thread2, NULL, receiveMsg, (void*)&args1) != 0) {
@@ -224,3 +184,4 @@ int main(int argc, char *argv[]) {
     
     return 0;
 }
+

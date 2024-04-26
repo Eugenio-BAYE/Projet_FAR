@@ -79,6 +79,17 @@ int isExactlyPileOuFace(const char *msg) {
     return 0;
 }
 
+/* isExactlyDascalu : Checks if the given message is exactly "@dascalu\n"
+ * Parameters : const char *msg - A pointer to a string which will be compared.
+ * Return : Returns 1 if the string is exactly "@dascalu\n", otherwise returns 0.
+ */
+int isExactlyDascalu(const char *msg) {
+    if (msg != NULL && strcmp(msg, "@dascalu\n") == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 /* PileOuFace : Randomly returns "pile" or "face"
  * Precondition : The random number generator should be initialized if consistent results are desired.
  * Return : Returns a string, either "pile" or "face" based on a random number.
@@ -235,24 +246,30 @@ void* handle_client(void* args) {
     //test msg to know if it's a message or a command
     if(startsWithAt(msg) == 1){
       if(isExactlyClient(msg) == 1){
-        char * str;
+        char str[12];
         sprintf(str, "%d", nbr_of_clients);
-        sendMsg(dSC_sender, str, sizeof(int));
+        sendMsg(dSC_sender, str, strlen(str));
       }
       if(isExactlySize(msg) == 1){
-        char * str;
+        char str[12];
         sprintf(str, "%d", MAX_CLIENT);
-        sendMsg(dSC_sender, str, sizeof(int));
+        sendMsg(dSC_sender, str, strlen(str));
       }
       if(isExactlyRandom(msg) == 1){
-        char * str;
+        char str[12];
         int random = randomInt();
         sprintf(str, "%d", random);
-        sendMsg(dSC_sender, str, sizeof(int));
+        sendMsg(dSC_sender, str, strlen(str));
       }
       if(isExactlyPileOuFace(msg) == 1){
         char *pileface = PileOuFace();
         sendMsg(dSC_sender, pileface, strlen(pileface));
+      }
+      if(isExactlyDascalu(msg) == 1){
+        char *dascalu = "DASCALUUUUUUUUUUUU";
+        sendMsg(dSC_sender, dascalu, strlen(dascalu));
+        broadcast_size(dSC_sender, strlen(dascalu));
+        broadcast_message(dSC_sender, dascalu, strlen(dascalu));
       }
     }
     else{

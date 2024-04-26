@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 // Include files
 #include "src/server_src/client_handling.h" 
@@ -13,21 +14,31 @@
 
 #define MAX_CLIENT 10
 #define handle_error(msg) \
-           do { perror(msg); exit(EXIT_FAILURE); } while (0)
+do { perror(msg); exit(EXIT_FAILURE); } while (0)
 // ------------------------------------------------------
 
 int clients[MAX_CLIENT]; // Array to store client socket descriptors
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for thread-safe access to clients array
 int nbr_of_clients = 0;
+int dS ;
 
 struct handle_client_args {
   int dSC_sender;
 };
+/* sigint_handler : handle ctrl + c of the program 
+ * Parameters : int sig_num (signal number)
+ * Return : Nothing
+ */
+void sigint_handler(int sig_num) {
+  printf("\nCtrl+C pressed. Exiting...\n");
+  shutdown(dS,2);
+  exit(0);
+}
 
- /* broadcast_message : Send a message to every client except the one in parameter
+/* broadcast_message : Send a message to every client except the one in parameter
   * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
   * Parameters : int sender(file descriptor of the sender), char* message(message to broadcast to the list), int message_size (size of the message)
-  * Returns : Nothing
+  * Return : Nothing
   */
 void broadcast_message(int sender, char *message, int message_size) {
   printf("Message broadcasting : %s\n", message);
@@ -39,10 +50,10 @@ void broadcast_message(int sender, char *message, int message_size) {
   }
   pthread_mutex_unlock(&mutex);
 }
- /* broadcast_size: Send the size to every client except the one in parameter
+/* broadcast_size: Send the size to every client except the one in parameter
   * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
   * Parameters : int sender(file descriptor of the sender), size_t inputLength (size to broadcast to the list) 
-  * Returns : Nothing
+  * Return : Nothing
   */
 void broadcast_size(int sender, size_t inputLength) {
   pthread_mutex_lock(&mutex); // Lock mutex for thread safety
@@ -96,6 +107,7 @@ void* handle_client(void* args) {
     broadcast_size(dSC_sender, inputLength);
     char * msg = malloc(inputLength);
     if(receive_message(dSC_sender, msg, inputLength) <= 0) {
+      free(msg);
       pthread_mutex_lock(&mutex);
       for (int i = 0; i < MAX_CLIENT; i++) {
         if (clients[i] == dSC_sender) {
@@ -111,16 +123,17 @@ void* handle_client(void* args) {
       break;
     }
     broadcast_message(dSC_sender, msg, inputLength);
+    free(msg);
   }
 }
 
 int main(int argc, char *argv[]) {
   if(argc != 2){
     printf("Usage : %s <port>\n", argv[0]);
-    perror("Can't run program");
+    printf("Can't run program\n");
     exit(EXIT_FAILURE);
   }
-
+  signal(SIGINT, sigint_handler);
   printf("Starting program\n");
 
   for (int i = 0; i < MAX_CLIENT; i++) {
@@ -128,18 +141,16 @@ int main(int argc, char *argv[]) {
   }
 
   // Server socket connection
-  int dS = new_server_socket(atoi(argv[1]));
+  dS = new_server_socket(atoi(argv[1]));
   printf("Waiting for clients\n");
-
   while (1){
     int dSC = new_client_connection(dS);
-    while(nbr_of_clients>9){
-      perror("Too much clients to handle");
-      exit(EXIT_FAILURE);
-    }
-    
-    pthread_mutex_lock(&mutex);
     nbr_of_clients++;
+    while(nbr_of_clients>9){
+      sleep(5);
+    }
+
+    pthread_mutex_lock(&mutex);
     pthread_mutex_unlock(&mutex);
     pthread_t thread;
     // Add client to the clients array
@@ -159,8 +170,4 @@ int main(int argc, char *argv[]) {
       return 1;
     }
   }
-
-  printf("Shutting down programm\n");
-  close(dS) ;
-  printf("Bye bye\n");
 }

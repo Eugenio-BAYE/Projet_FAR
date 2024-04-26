@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <time.h>
+#include <string.h>
 
 // Include files
 #include "src/server_src/client_handling.h" 
@@ -21,6 +23,89 @@ int clients[MAX_CLIENT]; // Array to store client socket descriptors
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for thread-safe access to clients array
 int nbr_of_clients = 0;
 int dS ;
+
+
+
+
+
+int startsWithAt(const char *msg) {
+    if (msg != NULL && msg[0] == '@') {
+        return 1; //Start with '@'
+    }
+    return 0;
+}
+
+int isExactlySize(const char *msg) {
+    if (msg != NULL && strcmp(msg, "@size\n") == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+int isExactlyClient(const char *msg) {
+    if (msg != NULL && strcmp(msg, "@client\n") == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+int isExactlyRandom(const char *msg) {
+    if (msg != NULL && strcmp(msg, "@random\n") == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+int isExactlyPileOuFace(const char *msg) {
+    if (msg != NULL && strcmp(msg, "@pileouface\n") == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+char *PileOuFace() {
+    int var = rand() % 2;
+    if(var == 1){
+      return "pile";
+    }
+    else{
+      return "face";
+    }
+}
+
+int randomInt() {
+    return rand() % 1000;
+}
+
+void sendMsg(int sD, char *buffer, size_t inputLength){
+  int sendSize = send(dS, &inputLength, sizeof(size_t), 0);
+  if (sendSize == -1) {
+      perror("Error sending size");
+      pthread_exit(0);
+  }
+  if (sendSize == 0) {
+  puts("Error, disconnected when sending size");
+      pthread_exit(0);
+  }
+  puts ("Input length sent");
+
+
+  int sendMessage = send(dS, buffer, inputLength, 0);
+  if (sendMessage == -1) {
+      perror("Error sending message");
+      pthread_exit(0);
+  }
+  if (sendMessage == 0) {
+  puts("Error, disconnected when sending message");
+      pthread_exit(0);
+  }
+  puts ("Message sent");
+}
+
+
+
+
+
 
 struct handle_client_args {
   int dSC_sender;
@@ -104,7 +189,6 @@ void* handle_client(void* args) {
     puts ("Size received:");
     puts (lengthString); //Print it
 
-    broadcast_size(dSC_sender, inputLength);
     char * msg = malloc(inputLength);
     if(receive_message(dSC_sender, msg, inputLength) <= 0) {
       free(msg);
@@ -122,7 +206,33 @@ void* handle_client(void* args) {
       pthread_exit(NULL);
       break;
     }
-    broadcast_message(dSC_sender, msg, inputLength);
+    //test msg to know if it's a message or a command
+    if(startsWithAt(msg) == 1){
+      if(isExactlyClient(msg) == 1){
+        char * str;
+        sprintf(str, "%d", nbr_of_clients);
+        sendMsg(dSC_sender, str, sizeof(int));
+      }
+      if(isExactlySize(msg) == 1){
+        char * str;
+        sprintf(str, "%d", MAX_CLIENT);
+        sendMsg(dSC_sender, str, sizeof(int));
+      }
+      if(isExactlyRandom(msg) == 1){
+        char * str;
+        int random = randomInt();
+        sprintf(str, "%d", random);
+        sendMsg(dSC_sender, str, sizeof(int));
+      }
+      if(isExactlyPileOuFace(msg) == 1){
+        char *pileface = PileOuFace();
+        sendMsg(dSC_sender, pileface, strlen(pileface));
+      }
+    }
+    else{
+      broadcast_size(dSC_sender, inputLength);
+      broadcast_message(dSC_sender, msg, inputLength);
+    }
     free(msg);
   }
 }

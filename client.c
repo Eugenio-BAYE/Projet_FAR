@@ -5,140 +5,183 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
+
+#include "src/client_src/server_handling.h"
+#include "src/client_src/client_utils.h"
+
 #define msgLength 256
 
-int connectSocket(char * arg1, int arg2 ){
-    // Connect the socket and the server
-    int dS = socket(PF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in aS;
-    aS.sin_family = AF_INET;
-    inet_pton(AF_INET,arg1,&(aS.sin_addr)) ;
-    aS.sin_port = htons(arg2) ;
-    socklen_t lgA = sizeof(struct sockaddr_in) ;
-    connect(dS, (struct sockaddr *) &aS, lgA);
-    printf("Socket connected\n");
-    return dS;
+int dS;
+
+struct thread_args {
+    int dS;
+};
+
+/* handle_sigint : Handles the SIGINT signal (Ctrl-C interruption) by shutting down the specified socket and exiting the program.
+ * Parameters: - int sig: The signal number received by the handler.
+ * Returns: None, as the function terminates the program by calling exit(1).
+ */
+void handle_sigint(int sig) {
+    printf("Caught signal %d, shutting down socket\n", sig);
+    shutdown(dS, 2);
+    exit(1);
 }
 
-int compareFin(char * buffer){
-    // Check if the char * contains only the word "fin", return 1 if it contains only "fin" or return 0 otherwise
-    if(strcmp(buffer, "fin\n") == 0){
-        return 1;
-    }
-    else{
-        return 0;
-    }
-}
 
-void* sendMsg(int client, int dS){
+/** sendMsg : Send messages from the user to a server over a socket.
+ * Parameters: void *args: Pointer to a 'thread_args' structure which the socket descriptor 'dS'.
+ * Errors: If sending the size or message fails or the socket disconnect, it will print an error and exit the thread.
+ * Returns: NULL on exit, either after an error or after a termination command ("fin").
+ */
+void* sendMsg(void * args){
+    struct thread_args * t_args = (struct thread_args *) args;
+    int dS = t_args -> dS;
     int isRunning = 1;
     char * buffer = malloc(msgLength);
   
     while(isRunning == 1){
         // Read the keyboard enter
-        printf("Please enter a string of characters : \n");
+        puts("Please enter a string of characters :");
         if (fgets(buffer, msgLength, stdin) != NULL) {
-            printf("You have entered : %s\n", buffer);
-            size_t inputLength = strlen(buffer); // -1 to exclude the newline character ('\n')
-            printf("Number of characters entered: %zu\n", inputLength);
+            puts ("You have entered:") ;
+            puts (buffer);
+            size_t inputLength = strlen(buffer)+1; // +1 to include the newline character ('\n')
+            char lengthString[20]; // Create a char for create a String of the size
+            snprintf(lengthString, 20, "%zu", inputLength-1); // Convert it
+            puts ("Number of characters entered:");
+            puts (lengthString); //Print it
 
-            if (send(dS, &inputLength, sizeof(size_t), 0) == -1) {
+            int sendSize = send(dS, &inputLength, sizeof(size_t), 0);
+            if (sendSize == -1) {
                 perror("Error sending size");
-                break; // Go out of the loop if the send dont work
+                pthread_exit(0);
             }
-            printf("Input length sent \n");
+            if (sendSize == 0) {
+            puts("Error, disconnected when sending size");
+                pthread_exit(0);
+            }
+            puts ("Input length sent");
 
-            if (send(dS, buffer, inputLength+1, 0) == -1) {
+
+            int sendMessage = send(dS, buffer, inputLength, 0);
+            if (sendMessage == -1) {
                 perror("Error sending message");
-                break; // Go out of the loop if the send dont work
+                pthread_exit(0);
             }
-            printf("Message sent \n");
+            if (sendMessage == 0) {
+            puts("Error, disconnected when sending message");
+                pthread_exit(0);
+            }
+            puts ("Message sent");
             
             // Check if the loop is finished with the word "fin"
             if (compareFin(buffer) == 1){
                 isRunning = 0;
-                printf("End of program\n");
+                puts ("End of program");
             }
         } 
         else {
-            printf("Error reading or end of file detected.\n");
+            puts ("Error reading or end of file detected");
         }
     }
     free(buffer);
-    shutdown(dS, 2); // Close the connection
     return NULL;
 }
 
-void* receiveMsg(int client, int dS) {
+/** receiveMsg : Receive messages from the user to a server over a socket.
+ * Parameters: void *args: Pointer to a 'thread_args' structure which the socket descriptor 'dS'.
+ * Errors: If receiving the size or message fails or the socket disconnect, it will print an error and exit the thread.
+ * Returns: NULL on exit, either after an error or after a termination command ("fin").
+ */
+void* receiveMsg(void* args) {
+    struct thread_args * t_args = (struct thread_args *) args;
+    int dS = t_args -> dS;
     int isRunning = 1;
-    char *buffer = malloc(msgLength);
+    char * buffer = malloc(msgLength);
   
     while(isRunning == 1) {
-        printf("Ready to receive\n");
+        puts ("Ready to receive");
         size_t inputLength;
 
         // Receive the size of the message
-        if (recv(dS, &inputLength, sizeof(size_t), 0) == -1) {
+        int receiveSize = recv(dS, &inputLength, sizeof(size_t), 0);
+        if (receiveSize == -1) {
             perror("Error receiving size");
-            break; // Go out of the loop if the receive dont work
+            pthread_exit(0);
+        }
+        if (receiveSize == 0) {
+            puts("Error, disconnected when receiving size");
+            pthread_exit(0);
         }
 
-        printf("Size received: %zu",inputLength);
+        char * buffer = malloc(inputLength);
+        char lengthString[20]; // Create a char for create a String of the size
+        snprintf(lengthString, 20, "%zu", inputLength); // Convert it
+        puts ("Size received:");
+        puts (lengthString); //Print it
 
         // Receive the message
-        if (recv(dS, buffer, inputLength, 0) == -1) {
+        int receiveMessage = recv(dS, buffer, inputLength, 0);
+        if (receiveMessage == -1) {
             perror("Error receiving message");
-            break; // Go out of the loop if the receive dont work
+            pthread_exit(0);
+        }
+        if(receiveMessage == 0){
+            puts("Error, disconnected when receiving message");
+            pthread_exit(0);
         }
 
-        printf("Message received : %s\n", buffer);
+        puts ("Message received:");
+        puts (buffer);
 
         // Check if the loop is finished with the word "fin"
         if (compareFin(buffer) == 1){
             isRunning = 0;
-            printf("End of program\n");
+            puts ("End of program");
         }
     }
     free(buffer);
-    shutdown(dS, 2); // Close the connection
     return NULL;
 }
+
 
 
 int main(int argc, char *argv[]) {
     // Check the number of arguments
     if (argc != 3) {
-        printf("Invalid number of arguments, usage:\n");
+        puts ("Invalid number of arguments, usage:");
         printf("%s IpServer Port\n", argv[0]);
         exit(0);
     }
 
     // Connect the socket
-    int dS = connectSocket(argv[1], atoi(argv[2]) );
-    int client = atoi(argv[3]);
+
+    dS = connect_socket(argv[1], atoi(argv[2]) );
+    signal(SIGINT, handle_sigint);
+
     pthread_t thread1, thread2;
-    
+    struct thread_args args1 = {dS};
+
     // Create first thread
-    if (pthread_create(&thread1, NULL, sendMsg(client, dS), NULL) != 0) {
-        perror("pthread_create");
+    if (pthread_create(&thread1, NULL, sendMsg, (void*)&args1) != 0) {
+        perror("pthreadSend_create");
         return 1;
     }
     
     // Create second thread
-    if (pthread_create(&thread2, NULL, receiveMsg(client, dS), NULL) != 0) {
-        perror("pthread_create");
+    if (pthread_create(&thread2, NULL, receiveMsg, (void*)&args1) != 0) {
+        perror("pthreadReceive_create");
         return 1;
     }
     
     // Wait the end of threads
-    if (pthread_join(thread1, NULL) != 0) {
-        perror("pthread_join");
-        return 1;
-    }
-    if (pthread_join(thread2, NULL) != 0) {
+    if ((pthread_join(thread1, NULL) != 0) || (pthread_join(thread2, NULL) != 0)) {
+        shutdown(dS, 2); // Close the connection
         perror("pthread_join");
         return 1;
     }
     
     return 0;
 }
+

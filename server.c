@@ -29,10 +29,10 @@ int dS ;
  * Return : Returns 1 if the string starts with '@', otherwise returns 0.
  */
 int startsWithAt(const char *msg) {
-    if (msg != NULL && msg[0] == '@') {
-        return 1; //Start with '@'
-    }
-    return 0;
+  if (msg != NULL && msg[0] == '@') {
+    return 1; //Start with '@'
+  }
+  return 0;
 }
 
 /* isExactlySize : Checks if the given message is exactly "@size\n"
@@ -40,10 +40,10 @@ int startsWithAt(const char *msg) {
  * Return : Returns 1 if the string is exactly "@size\n", otherwise returns 0.
  */
 int isExactlySize(const char *msg) {
-    if (msg != NULL && strcmp(msg, "@size\n") == 0) {
-        return 1;
-    }
-    return 0;
+  if (msg != NULL && strcmp(msg, "@size\n") == 0) {
+    return 1;
+  }
+  return 0;
 }
 
 /* isExactlyClient : Checks if the given message is exactly "@client\n"
@@ -51,10 +51,10 @@ int isExactlySize(const char *msg) {
  * Return : Returns 1 if the string is exactly "@client\n", otherwise returns 0.
  */
 int isExactlyClient(const char *msg) {
-    if (msg != NULL && strcmp(msg, "@client\n") == 0) {
-        return 1;
-    }
-    return 0;
+  if (msg != NULL && strcmp(msg, "@client\n") == 0) {
+    return 1;
+  }
+  return 0;
 }
 
 /* isExactlyRandom : Checks if the given message is exactly "@random\n"
@@ -62,10 +62,10 @@ int isExactlyClient(const char *msg) {
  * Return : Returns 1 if the string is exactly "@random\n", otherwise returns 0.
  */
 int isExactlyRandom(const char *msg) {
-    if (msg != NULL && strcmp(msg, "@random\n") == 0) {
-        return 1;
-    }
-    return 0;
+  if (msg != NULL && strcmp(msg, "@random\n") == 0) {
+    return 1;
+  }
+  return 0;
 }
 
 /* isExactlyPileOuFace : Checks if the given message is exactly "@pileouface\n"
@@ -73,10 +73,10 @@ int isExactlyRandom(const char *msg) {
  * Return : Returns 1 if the string is exactly "@pileouface\n", otherwise returns 0.
  */
 int isExactlyPileOuFace(const char *msg) {
-    if (msg != NULL && strcmp(msg, "@pileouface\n") == 0) {
-        return 1;
-    }
-    return 0;
+  if (msg != NULL && strcmp(msg, "@pileouface\n") == 0) {
+    return 1;
+  }
+  return 0;
 }
 
 /* isExactlyDascalu : Checks if the given message is exactly "@dascalu\n"
@@ -84,10 +84,10 @@ int isExactlyPileOuFace(const char *msg) {
  * Return : Returns 1 if the string is exactly "@dascalu\n", otherwise returns 0.
  */
 int isExactlyDascalu(const char *msg) {
-    if (msg != NULL && strcmp(msg, "@dascalu\n") == 0) {
-        return 1;
-    }
-    return 0;
+  if (msg != NULL && strcmp(msg, "@dascalu\n") == 0) {
+    return 1;
+  }
+  return 0;
 }
 
 /* PileOuFace : Randomly returns "pile" or "face"
@@ -95,13 +95,13 @@ int isExactlyDascalu(const char *msg) {
  * Return : Returns a string, either "pile" or "face" based on a random number.
  */
 char *PileOuFace() {
-    int var = rand() % 2;
-    if(var == 1){
-      return "pile";
-    }
-    else{
-      return "face";
-    }
+  int var = rand() % 2;
+  if(var == 1){
+    return "pile";
+  }
+  else{
+    return "face";
+  }
 }
 
 /* randomInt : Generates a random integer between 0 and 999
@@ -109,7 +109,7 @@ char *PileOuFace() {
  * Return : Returns a random integer in the range [0, 999].
  */
 int randomInt() {
-    return rand() % 1000;
+  return rand() % 1000;
 }
 
 /* sendMsg : Sends a message and its length to the specified socket.
@@ -122,24 +122,25 @@ int randomInt() {
 void sendMsg(int dS, char *buffer, size_t inputLength){
   int sendSize = send(dS, &inputLength, sizeof(size_t), 0);
   if (sendSize == -1) {
-      perror("Error sending size");
-      exit(0);
+    perror("Error sending size");
+    exit(0);
   }
   if (sendSize == 0) {
-  puts("Error, disconnected when sending size");
-      exit(0);
+    puts("Error, disconnected when sending size");
+    exit(0);
   }
   puts ("Input length sent");
 
-
+  char *dataToSend = malloc(inputLength);
+  memcpy(dataToSend, buffer, inputLength);
   int sendMessage = send(dS, buffer, inputLength, 0);
   if (sendMessage == -1) {
-      perror("Error sending message");
-      exit(0);
+    perror("Error sending message");
+    exit(0);
   }
   if (sendMessage == 0) {
-  puts("Error, disconnected when sending message");
-      exit(0);
+    puts("Error, disconnected when sending message");
+    exit(0);
   }
   puts ("Message sent");
 }
@@ -154,6 +155,7 @@ struct handle_client_args {
 void sigint_handler(int sig_num) {
   printf("\nCtrl+C pressed. Exiting...\n");
   shutdown(dS,2);
+  close(dS);
   exit(0);
 }
 
@@ -221,10 +223,6 @@ void* handle_client(void* args) {
       pthread_exit(NULL);
       break;// Go out of the loop if the receive dont work
     }
-    char lengthString[20]; // Create a char for create a String of the size
-    snprintf(lengthString, 20, "%zu", inputLength); // Convert it
-    puts ("Size received:");
-    puts (lengthString); //Print it
 
     char * msg = malloc(inputLength);
     if(receive_message(dSC_sender, msg, inputLength) <= 0) {

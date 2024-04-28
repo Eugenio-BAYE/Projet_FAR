@@ -303,8 +303,6 @@ int main(int argc, char *argv[]) {
       sleep(5);
     }
 
-    pthread_mutex_lock(&mutex);
-    pthread_mutex_unlock(&mutex);
     pthread_t thread;
     // Add client to the clients array
     pthread_mutex_lock(&mutex);

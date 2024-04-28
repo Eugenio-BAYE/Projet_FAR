@@ -129,7 +129,6 @@ void sendMsg(int dS, char *buffer, size_t inputLength){
     puts("Error, disconnected when sending size");
     exit(0);
   }
-  puts ("Input length sent");
 
   char *dataToSend = malloc(inputLength);
   memcpy(dataToSend, buffer, inputLength);
@@ -142,7 +141,6 @@ void sendMsg(int dS, char *buffer, size_t inputLength){
     puts("Error, disconnected when sending message");
     exit(0);
   }
-  puts ("Message sent");
 }
 
 struct handle_client_args {

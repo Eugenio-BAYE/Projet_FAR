@@ -22,6 +22,13 @@ int new_server_socket(int port){
   }
   printf("Socket created\n");
 
+  // Set SO_REUSEADDR socket option to reuse port
+  int opt = 1;
+  if (setsockopt(dS, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+    perror("setsockopt");
+    exit(EXIT_FAILURE);
+  }
+
   // Structure 'ad' of type 'sockaddr_in' to store socket infos
   struct sockaddr_in ad;
   ad.sin_family = AF_INET; // Set adress to IPv4 

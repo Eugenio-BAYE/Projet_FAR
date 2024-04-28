@@ -23,7 +23,7 @@ struct thread_args {
  * Returns: None, as the function terminates the program by calling exit(1).
  */
 void handle_sigint(int sig) {
-    printf("Caught signal %d, shutting down socket\n", sig);
+    printf("\nCtrl+C pressed. Exiting...\n");
     shutdown(dS, 2);
     exit(1);
 }
@@ -156,9 +156,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Connect the socket
-
-    dS = connect_socket(argv[1], atoi(argv[2]) );
     signal(SIGINT, handle_sigint);
+    dS = connect_socket(argv[1], atoi(argv[2]) );
 
     pthread_t thread1, thread2;
     struct thread_args args1 = {dS};

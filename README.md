@@ -49,14 +49,16 @@ Then, lauch the server file with the desired port (between 2000 and 8000)
 
 Open a terminal window on another computer and launch the client file :
 ```
-./client <server_ip> <port> 1
+./client <server_ip> <port>
 ```
 
 Open a terminal window on another computer and launch the client file :
 ```
-./client <server_ip> <port> 2
+./client <server_ip> <port>
 ```
 
 ### Using the app
 
-When it's the turn of a client to send a message, type the message in the terminal window and press enter. The other client should receive the message and then can type its message.
+Each client can send messages to other clients by typing the message and pressing enter
+Clients can use commands by typing @ before the command (ex. @pileouface)
+CLients can disconnect by typing fin

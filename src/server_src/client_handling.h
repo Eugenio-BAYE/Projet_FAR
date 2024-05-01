@@ -5,6 +5,14 @@
 
 #endif // !CLIENT_HANDLING_H
 
+int get_nbr_of_clients();
+int get_max_client();
+void free_client_list();
+void add_new_client(int dSC);
+int can_accept_new_client();
+void broadcast_message(int sender, char *message, int message_size);
+void broadcast_size(int sender, size_t inputLength);
+void remove_client(int dSC);
 /* new_client_connection : Accepts a new client 
  * Parameters : int server_socket (file descriptor of the socket)
  * Returns : int client_socket (file descriptor for the client)

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../../server.h"
+#include "client_handling.h"
 
 void cmd_random(int dSC){
   int random = rand() %1000;

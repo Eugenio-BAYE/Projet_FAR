@@ -50,8 +50,6 @@ void cmd_size(int dSC){
 
 void cmd_dascalu(int dSC){
   char* message = "DASCALUUU\0";
-  
   int message_size = strlen(message) + 1; 
-  broadcast_size(dSC, message_size);
   broadcast_message(dSC, message, message_size);
 }

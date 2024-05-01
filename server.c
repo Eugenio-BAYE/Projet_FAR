@@ -10,21 +10,18 @@
 #include "src/server_src/client_handling.h" 
 #include "src/server_src/server_handling.h"
 #include "src/server_src/server_utils.h"
-// ------------------------------------------------------
 
 // ------------------------------------------------------
-
 static int dS ;
-
-struct handle_client_args {
+struct handle_client_args{
   int dSC_sender;
 };
+// ------------------------------------------------------
 
 /* sigint_handler : handle ctrl + c of the program 
  * Parameters : int sig_num (signal number)
- * Return : Nothing
  */
-void sigint_handler(int sig_num) {
+void sigint_handler(int sig_num){
   printf("\nCtrl+C pressed. Exiting...\n");
   shutdown(dS,2);
   close(dS);
@@ -34,13 +31,11 @@ void sigint_handler(int sig_num) {
 /* handle_client : Thread-dedicated function to handle each client
  * Precondition : No more than <MAX_CLIENT> clients to handle
  * Parameters : struct handle_client_args -> int dSC_sender (file descriptor of the sender client)
- * Returns : Nothing
  */ 
-void* handle_client(void* args) {
-  struct handle_client_args* t_args = (struct handle_client_args*)args;
-  int dSC_sender = t_args->dSC_sender;
-
-  while (1) {
+void* handle_client(void* args){
+  struct handle_client_args* t_args=(struct handle_client_args*)args;
+  int dSC_sender=t_args->dSC_sender;
+  while(1){
     puts ("Ready to receive");
     size_t inputLength;
 
@@ -49,9 +44,9 @@ void* handle_client(void* args) {
       remove_client(dSC_sender);
       printf("Client disconnect\n");
       pthread_exit(NULL);
-      break;// Go out of the loop if the receive dont work
+      break;
     }
-
+    // Receive message
     char * msg = malloc(inputLength);
     if(receive_message(dSC_sender, msg, inputLength) <= 0) {
       free(msg);
@@ -60,13 +55,11 @@ void* handle_client(void* args) {
       pthread_exit(NULL);
       break;
     }
-    //test msg to know if it's a message or a command
+    // Check message to know if it's a message or a command
     if(is_a_command(msg) == 1){
-      printf("main:is a command\n");
-     execute_command(msg, dSC_sender);
+      execute_command(msg, dSC_sender);
     }
     else{
-      broadcast_size(dSC_sender, inputLength);
       broadcast_message(dSC_sender, msg, inputLength);
     }
     free(msg);
@@ -86,7 +79,6 @@ int main(int argc, char *argv[]) {
 
   // Server socket connection
   dS = new_server_socket(atoi(argv[1]));
-  printf("Waiting for clients\n");
   while (1){
     int dSC = new_client_connection(dS);
     while(!can_accept_new_client()){
@@ -97,7 +89,6 @@ int main(int argc, char *argv[]) {
     add_new_client(dSC);
 
     struct handle_client_args arg = {dSC};
-
     if (pthread_create(&thread, NULL, handle_client, (void*)&arg) != 0) {
       perror("pthread_create");
       return 1;

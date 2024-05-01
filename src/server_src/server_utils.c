@@ -8,7 +8,6 @@
 void send_msg(int dSC, char *msg) {
   // Calculate the size of the message
   size_t msg_size = strlen(msg) + 1;
-  printf("server_utils:send_msg Message lenght %ld\n", msg_size);
 
   char *new_msg = malloc(msg_size + 1); // Add 1 for null terminator
   memcpy(new_msg, msg, msg_size);
@@ -38,7 +37,6 @@ int is_a_command(const char *msg) {
 }
 
 void execute_command(const char *command, int dSC) {
-  printf("server_utils : execute_command\n");
   if (command == NULL){
     perror("Can't execute_command() on empty command");
   }
@@ -59,7 +57,7 @@ void execute_command(const char *command, int dSC) {
   if (strcmp(command, "@dascalu\n") == 0) {
     cmd_dascalu(dSC);
   } else {
-    printf("Unknown command: %s\nCheck man for more info\n", command);
+    send_msg(dSC,"Unknown command \nCheck man for more info\0");
   }
 }
 

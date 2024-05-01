@@ -3,12 +3,76 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
-/* new_client_connection : Accepts a new client 
- * Parameters : int server_socket (file descriptor of the socket)
- * Returns : int client_socket (file descriptor for the client)
- * Postconditions : Blocking function, can't continue without a new user connecting
- */
+#define MAX_CLIENT 10
+
+static int clients[MAX_CLIENT];
+static int nbr_of_clients = 0;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+int get_nbr_of_clients(){
+  return nbr_of_clients;
+}
+
+int get_max_client(){
+  return MAX_CLIENT;
+}
+
+void free_client_list(){
+  for (int i = 0; i < MAX_CLIENT; i++){
+    clients[i]=0;
+  }
+}
+
+int can_accept_new_client(){
+  if(nbr_of_clients < MAX_CLIENT){
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+
+void add_new_client(int dSC){
+  nbr_of_clients++;
+  pthread_mutex_lock(&mutex);
+  for (int i = 0; i < MAX_CLIENT; i++){
+    if(clients[i]==0){
+      clients[i]=dSC;
+      break;
+    }
+  }
+  pthread_mutex_unlock(&mutex);
+}
+
+void broadcast_message(int sender, char *message, int message_size) {
+  printf("Message broadcasting : %s\n", message);
+  pthread_mutex_lock(&mutex); // Lock mutex for thread safety
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i] != 0 && clients[i] != sender) {
+      send(clients[i], &message_size, sizeof(size_t), 0);
+      send(clients[i], message, message_size, 0);
+    }
+  }
+  pthread_mutex_unlock(&mutex);
+}
+
+
+void remove_client(int dSC){
+  pthread_mutex_lock(&mutex);
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i] == dSC) {
+      clients[i] = 0;
+      break;
+    }
+  }
+  pthread_mutex_unlock(&mutex);
+  nbr_of_clients--;
+  close(dSC);
+  printf("Client disconnected\n");
+}
+
 int new_client_connection(int server_socket) {
   struct sockaddr_in client_addr;
   socklen_t client_addr_len = sizeof(client_addr);
@@ -17,21 +81,11 @@ int new_client_connection(int server_socket) {
   return client_socket;
 }
 
-/* receive_from_client : Get a message from a client in msg
- * Preconditions : Ensure messages will fit in var "msg"
- * Parameters : int dSC (descriptor of socket client), char *msg[] (char list in wich the message is returned)
- */
 int receive_message(int dSC, char msg[], int msgLenght){
-  // Empty msg of all content
   memset(msg, '\0', msgLenght);
   int received_size = recv(dSC, msg, msgLenght, 0);
   return received_size;
 }
-
-/* receive_from_client : Get a message from a client in msg
- * Preconditions : Ensure messages will fit in var "msg"
- * Parameters : int dSC (descriptor of socket client), char *msg[] (char list in wich the message is returned)
- */
 
 int receive_msg_size(int dSC, size_t *size) {
   size_t message_size;

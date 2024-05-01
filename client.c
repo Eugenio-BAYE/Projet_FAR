@@ -95,6 +95,7 @@ void* receiveMsg(void* args) {
   char * buffer = malloc(msgLength);
 
   while(isRunning == 1) {
+  
     puts ("Ready to receive");
     size_t inputLength;
 

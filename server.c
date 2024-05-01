@@ -35,6 +35,7 @@ void sigint_handler(int sig_num){
 void* handle_client(void* args){
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int dSC_sender=t_args->dSC_sender;
+  ask_username(dSC_sender);
   while(1){
     puts ("Ready to receive");
     size_t inputLength;
@@ -60,7 +61,10 @@ void* handle_client(void* args){
       execute_command(msg, dSC_sender);
     }
     else{
-      broadcast_message(dSC_sender, msg, inputLength);
+      int size = formated_msg_size(dSC_sender, inputLength);
+      char* formated_msg = malloc(size);
+      format_msg(msg, dSC_sender, size, formated_msg);
+      broadcast_message(dSC_sender, formated_msg, size);
     }
     free(msg);
   }

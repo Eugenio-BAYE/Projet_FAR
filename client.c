@@ -42,10 +42,8 @@ void* sendMsg(void * args){
 
   while(isRunning == 1){
     // Read the keyboard enter
-    puts("Please enter a string of characters :");
     if (fgets(buffer, msgLength, stdin) != NULL) {
-      puts ("You have entered:") ;
-      puts (buffer);
+      
       size_t inputLength = strlen(buffer)+1; // +1 to include the newline character ('\n')
       int sendSize = send(dS, &inputLength, sizeof(size_t), 0);
       if (sendSize == -1) {
@@ -66,7 +64,6 @@ void* sendMsg(void * args){
         puts("Error, disconnected when sending message");
         pthread_exit(0);
       }
-      puts ("Message sent");
 
       // Check if the loop is finished with the word "fin"
       if (compareFin(buffer) == 1){
@@ -96,7 +93,6 @@ void* receiveMsg(void* args) {
 
   while(isRunning == 1) {
   
-    puts ("Ready to receive");
     size_t inputLength;
 
     // Receive the size of the message
@@ -109,6 +105,7 @@ void* receiveMsg(void* args) {
       puts("Server disconnected");
       pthread_exit(0);
     }
+    memset(buffer, '\0', msgLength);
 
     // Receive the message
     int receiveMessage = recv(dS, buffer, inputLength, 0);
@@ -121,7 +118,6 @@ void* receiveMsg(void* args) {
       pthread_exit(0);
     }
 
-    puts ("Message received:");
     puts (buffer);
 
     // Check if the loop is finished with the word "fin"

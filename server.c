@@ -65,6 +65,7 @@ void* handle_client(void* args){
       char* formated_msg = malloc(size);
       format_msg(msg, dSC_sender, size, formated_msg);
       broadcast_message(dSC_sender, formated_msg, size);
+      free(formated_msg);
     }
     free(msg);
   }

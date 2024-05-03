@@ -35,6 +35,7 @@ void sigint_handler(int sig_num){
 void* handle_client(void* args){
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int dSC_sender=t_args->dSC_sender;
+  ask_username(dSC_sender);
   while(1){
     puts ("Ready to receive");
     size_t inputLength;
@@ -46,9 +47,11 @@ void* handle_client(void* args){
       pthread_exit(NULL);
       break;
     }
+    printf("%ld\n", inputLength);
     // Receive message
     char * msg = malloc(inputLength);
-    if(receive_message(dSC_sender, msg, inputLength) <= 0) {
+    int size_of_received_message = receive_message(dSC_sender, msg, inputLength);
+    if(size_of_received_message <= 0) {
       free(msg);
       remove_client(dSC_sender);
       printf("Client disconnected\n");
@@ -60,7 +63,11 @@ void* handle_client(void* args){
       execute_command(msg, dSC_sender);
     }
     else{
-      broadcast_message(dSC_sender, msg, inputLength);
+      int size = formated_msg_size(dSC_sender, inputLength);
+      char* formated_msg = malloc(size);
+      format_msg(msg, dSC_sender, size, formated_msg);
+      broadcast_message(dSC_sender, formated_msg, size);
+      free(formated_msg);
     }
     free(msg);
   }

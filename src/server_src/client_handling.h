@@ -28,7 +28,7 @@ void format_msg(char msg[],int dSC,int size, char formated_msg[]);
   * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
   * Parameters : int sender(file descriptor of the sender), char* message(message to broadcast to the list), int message_size (size of the message)
   */
-void broadcast_message(int sender, char *message, int message_size);
+void broadcast_message(int sender, char *message, size_t message_size);
 /* broadcast_size: Send the size to every client except the one in parameter
   * Precondition : Sender must be in the global clients listening, mutex must be free in order to access the global client list 
   * Parameters : int sender(file descriptor of the sender), size_t inputLength (size to broadcast to the list) 

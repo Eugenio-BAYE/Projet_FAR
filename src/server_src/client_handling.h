@@ -2,6 +2,7 @@
 #define CLIENT_HANDLING_H
 
 #include <stdlib.h>
+#include <semaphore.h>
 
 #endif // !CLIENT_HANDLING_H
 
@@ -9,8 +10,10 @@ int get_nbr_of_clients();
 int get_max_client();
 void free_client_list();
 void add_new_client(int dSC);
-int can_accept_new_client();
-void remove_client(int dSC);
+int can_accept_new_client(sem_t *semaphore);
+sem_t new_semaphore();
+
+void remove_client(int dSC, sem_t semaphore);
 /* is_username_valid : Checks if username can be used
  * Parameters : char username[] 
  * Returns :  1 if it can be taken (SUCESS)

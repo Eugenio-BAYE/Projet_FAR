@@ -56,7 +56,7 @@ void execute_command(const char *command, int dSC) {
     cmd_pile_ou_face(dSC);
     return;
   }
-  if (strcmp(command, "@dascalu\n") == 0) {
+  if (strcmp(command, "@dascalu\0") == 0) {
     cmd_dascalu(dSC);
     return;
   }

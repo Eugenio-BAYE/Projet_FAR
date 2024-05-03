@@ -47,9 +47,11 @@ void* handle_client(void* args){
       pthread_exit(NULL);
       break;
     }
+    printf("%ld\n", inputLength);
     // Receive message
     char * msg = malloc(inputLength);
-    if(receive_message(dSC_sender, msg, inputLength) <= 0) {
+    int size_of_received_message = receive_message(dSC_sender, msg, inputLength);
+    if(size_of_received_message <= 0) {
       free(msg);
       remove_client(dSC_sender);
       printf("Client disconnected\n");

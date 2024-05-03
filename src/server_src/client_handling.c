@@ -25,17 +25,17 @@ int formated_msg_size(int dSC, int msg_size){
   int size = 0;
   for(int i=0; i<MAX_CLIENT; i++){
     if (clients[i].dSC==dSC){
-      size=clients[i].username_lenght+1+msg_size;
+      size=clients[i].username_lenght+3+msg_size;
     }
   }
   return size;
 }
 
 void format_msg(char msg[], int dSC, int size, char formated_msg[]){
-  memset(formated_msg, 0, size);
+  memset(formated_msg, '\0', size);
   for(int i=0; i<MAX_CLIENT; i++){
     if(clients[i].dSC==dSC){
-      snprintf(formated_msg, size+1, "<%s> %s", clients[i].username, msg);
+      snprintf(formated_msg, size, "<%s> %s", clients[i].username, msg);
     }
   }
 }
@@ -80,7 +80,7 @@ void ask_username(int dSC) {
     char *input = malloc(input_length);
     int length = receive_message(dSC, input, input_length);
     if (length > 0) {
-      input[length-2] = '\0'; // ensure null termination
+      input[length-1] = '\0'; // ensure null termination
       printf("Received username : %s\n", input);
       int valid_code = is_username_valid(input);
       if(valid_code == 1){
@@ -139,9 +139,10 @@ void add_new_client(int dSC){
   pthread_mutex_unlock(&mutex);
 }
 
-void broadcast_message(int sender, char *message, int message_size) {
+void broadcast_message(int sender, char *message, size_t message_size) {
   printf("Message broadcasting : %s\n", message);
   pthread_mutex_lock(&mutex); // Lock mutex for thread safety
+  message_size++;
   for (int i = 0; i < MAX_CLIENT; i++) {
     if (clients[i].dSC != 0 && clients[i].dSC != sender) {
       send(clients[i].dSC, &message_size, sizeof(size_t), 0);

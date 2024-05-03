@@ -77,10 +77,13 @@ void cmd_msg(int dSC, const char* command) {
       int size = strlen(message)+1+5;
       char* msg = malloc(size);
       snprintf(msg, size, "->Me %s", message);
+      printf("%d %s\n",size, msg);
       int formated_size = formated_msg_size(dSC, size);
-      char* formated_msg = malloc(size);
-      format_msg(msg, dSC, size, formated_msg);
+      char* formated_msg = malloc(formated_size);
+      format_msg(msg, dSC, formated_size, formated_msg);
+      printf("%d %s\n",formated_size, formated_msg);
       send_msg(recipient, formated_msg);
+      free(formated_msg);
     }
   }
 

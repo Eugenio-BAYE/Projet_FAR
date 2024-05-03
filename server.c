@@ -92,8 +92,15 @@ int main(int argc, char *argv[]) {
   sem_t semaphore = new_semaphore();
   while (1){
     
-    can_accept_new_client(semaphore);
+    if (can_accept_new_client(&semaphore) < 0) {
+      perror("Failed to acquire semaphore. Cannot accept new client.\n");
+      return 1;
+    }
     int dSC = new_client_connection(dS);
+    if (dSC < 0) {
+      perror("Failed to accept new client connection.\n");
+      return 1;
+    }
 
     pthread_t thread;
     add_new_client(dSC);

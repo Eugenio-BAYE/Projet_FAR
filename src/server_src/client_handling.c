@@ -119,14 +119,21 @@ void free_client_list(){
   }
 }
 
-int can_accept_new_client(sem_t semaphore){
-  sem_wait(&semaphore);
+int can_accept_new_client(sem_t *semaphore) {
+    if (sem_wait(semaphore) != 0) {
+        perror("Failed to wait on semaphore");
+        return -1;  // Return -1 on fail
+    }
+    return 0;  // Return 0 on success
 }
 
-sem_t new_semaphore(){
-  sem_t semaphore;
-  sem_init(&semaphore, 0, MAX_CLIENT);
-  return semaphore;
+sem_t new_semaphore() {
+    sem_t semaphore;
+    if (sem_init(&semaphore, 0, MAX_CLIENT) != 0) {
+        perror("Error initializing semaphore");
+        exit(EXIT_FAILURE);  // Exit if semaphore initialization fails
+    }
+    return semaphore;
 }
 
 void add_new_client(int dSC){

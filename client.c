@@ -38,47 +38,64 @@ void handle_sigint(int sig) {
 void* sendMsg(void * args){
   struct thread_args * t_args = (struct thread_args *) args;
   int dS = t_args -> dS;
-  char * buffer = malloc(msgLength);
 
   while(isRunning == 1){
-    // Read the keyboard enter
-    if (fgets(buffer, msgLength, stdin) != NULL) {
-      
-      size_t inputLength = strlen(buffer)+1; // +1 to include the newline character ('\n')
-      int sendSize = send(dS, &inputLength, sizeof(size_t), 0);
-      if (sendSize == -1) {
-        perror("Error sending size");
-        pthread_exit(0);
-      }
-      if (sendSize == 0) {
-        puts("Error, disconnected when sending size");
-        pthread_exit(0);
-      }
-
-      int sendMessage = send(dS, buffer, inputLength, 0);
-      if (sendMessage == -1) {
-        perror("Error sending message");
-        pthread_exit(0);
-      }
-      if (sendMessage == 0) {
-        puts("Error, disconnected when sending message");
-        pthread_exit(0);
-      }
-
-      // Check if the loop is finished with the word "fin"
-      if (compareFin(buffer) == 1){
-        isRunning = 0;
-        puts ("End of program");
-        free(buffer);
-        pthread_exit(0);
-      }
-    } 
-    else {
-      puts ("Error reading or end of file detected");
+    // Allocate memory for the buffer
+    char * buffer = malloc(msgLength);
+    if (buffer == NULL) {
+      perror("Error allocating memory for buffer");
+      pthread_exit(0);
     }
+
+    // Read the keyboard input
+    if (fgets(buffer, msgLength, stdin) == NULL) {
+      puts ("Error reading or end of file detected");
+      free(buffer);
+      pthread_exit(0);
+    }
+
+    size_t inputLength = strlen(buffer); // +1 to include the newline character ('\n')
+    buffer[inputLength-1]='\0';
+
+    // Send the size of the message
+    int sendSize = send(dS, &inputLength, sizeof(size_t), 0);
+    if (sendSize <= 0) {
+      if (sendSize == 0) {
+        puts("Server disconnected when sending size");
+      } else {
+        perror("Error sending size");
+      }
+      free(buffer);
+      pthread_exit(0);
+    }
+
+    // Send the message
+    int sendMessage = send(dS, buffer, inputLength, 0);
+    if (sendMessage <= 0) {
+      if(sendMessage == 0){
+        puts("Server disconnected when sending message");
+      } else {
+        perror("Error sending message");
+      }
+      free(buffer);
+      pthread_exit(0);
+    }
+
+    // Check if the loop is finished with the word "fin"
+    if (compareFin(buffer) == 1){
+      isRunning = 0;
+      puts ("End of program");
+    }
+
+    free(buffer);
   }
-  free(buffer);
   return NULL;
+}
+
+int receive_message(int dSC, char msg[], int msgLenght){
+  memset(msg, '\0', msgLenght);
+  int received_size = recv(dSC, msg, msgLenght, 0);
+  return received_size;
 }
 
 /** receiveMsg : Receive messages from the user to a server over a socket.
@@ -89,45 +106,56 @@ void* sendMsg(void * args){
 void* receiveMsg(void* args) {
   struct thread_args * t_args = (struct thread_args *) args;
   int dS = t_args -> dS;
-  char * buffer = malloc(msgLength);
 
   while(isRunning == 1) {
-  
+
     size_t inputLength;
 
     // Receive the size of the message
     int receiveSize = recv(dS, &inputLength, sizeof(size_t), 0);
-    if (receiveSize == -1) {
-      perror("Error receiving size");
+    if (receiveSize <= 0) {
+      if (receiveSize == 0) {
+        puts("Server disconnected");
+      } else {
+        perror("Error receiving size");
+      }
       pthread_exit(0);
     }
-    if (receiveSize == 0) {
-      puts("Server disconnected");
+    // Check that the message size is not too large
+    if (inputLength > 1024) {
+      fprintf(stderr, "Error: Message size %zu is too large\n", inputLength);
       pthread_exit(0);
     }
-    memset(buffer, '\0', msgLength);
+
+    char * msg = malloc(inputLength);
+    if (msg == NULL) {
+      perror("Error allocating memory for msg");
+      pthread_exit(0);
+    }
 
     // Receive the message
-    int receiveMessage = recv(dS, buffer, inputLength, 0);
-    if (receiveMessage == -1) {
-      perror("Error receiving message");
-      pthread_exit(0);
-    }
-    if(receiveMessage == 0){
-      puts("Server disconnected");
+    int receiveMessage = receive_message(dS, msg, inputLength);
+    if (receiveMessage <= 0) {
+      if(receiveMessage == 0){
+        puts("Server disconnected");
+      } else {
+        perror("Error receiving message");
+      }
+      free(msg);
       pthread_exit(0);
     }
 
-    puts (buffer);
+    puts (msg);
 
     // Check if the loop is finished with the word "fin"
-    if (compareFin(buffer) == 1){
+    if (compareFin(msg) == 1){
       isRunning = 0;
       puts ("End of program");
+      free(msg);
       pthread_exit(0);
     }
+    free(msg);
   }
-  free(buffer);
   return NULL;
 }
 

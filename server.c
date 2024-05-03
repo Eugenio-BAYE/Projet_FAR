@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <time.h>
+#include <semaphore.h>
 
 // Include files
 #include "src/server_src/client_handling.h" 
@@ -15,6 +16,7 @@
 static int dS ;
 struct handle_client_args{
   int dSC_sender;
+  sem_t semaphore;
 };
 // ------------------------------------------------------
 
@@ -35,6 +37,7 @@ void sigint_handler(int sig_num){
 void* handle_client(void* args){
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int dSC_sender=t_args->dSC_sender;
+  sem_t semaphore=t_args->semaphore;
   ask_username(dSC_sender);
   while(1){
     puts ("Ready to receive");
@@ -42,7 +45,7 @@ void* handle_client(void* args){
 
     // Receive the size of the message
     if (recv(dSC_sender, &inputLength, sizeof(size_t), 0) <= 0) {
-      remove_client(dSC_sender);
+      remove_client(dSC_sender, semaphore);
       printf("Client disconnect\n");
       pthread_exit(NULL);
       break;
@@ -53,7 +56,7 @@ void* handle_client(void* args){
     int size_of_received_message = receive_message(dSC_sender, msg, inputLength);
     if(size_of_received_message <= 0) {
       free(msg);
-      remove_client(dSC_sender);
+      remove_client(dSC_sender, semaphore);
       printf("Client disconnected\n");
       pthread_exit(NULL);
       break;
@@ -86,16 +89,16 @@ int main(int argc, char *argv[]) {
 
   // Server socket connection
   dS = new_server_socket(atoi(argv[1]));
+  sem_t semaphore = new_semaphore();
   while (1){
+    
+    can_accept_new_client(semaphore);
     int dSC = new_client_connection(dS);
-    while(!can_accept_new_client()){
-      sleep(5);
-    }
 
     pthread_t thread;
     add_new_client(dSC);
 
-    struct handle_client_args arg = {dSC};
+    struct handle_client_args arg = {dSC, semaphore};
     if (pthread_create(&thread, NULL, handle_client, (void*)&arg) != 0) {
       perror("pthread_create");
       return 1;

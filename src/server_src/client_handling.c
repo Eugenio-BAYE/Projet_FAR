@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include "server_utils.h"
 
@@ -118,13 +119,14 @@ void free_client_list(){
   }
 }
 
-int can_accept_new_client(){
-  if(nbr_of_clients < MAX_CLIENT){
-    return 1;
-  }
-  else{
-    return 0;
-  }
+int can_accept_new_client(sem_t semaphore){
+  sem_wait(&semaphore);
+}
+
+sem_t new_semaphore(){
+  sem_t semaphore;
+  sem_init(&semaphore, 0, MAX_CLIENT);
+  return semaphore;
 }
 
 void add_new_client(int dSC){
@@ -152,8 +154,7 @@ void broadcast_message(int sender, char *message, size_t message_size) {
   pthread_mutex_unlock(&mutex);
 }
 
-
-void remove_client(int dSC){
+void remove_client(int dSC, sem_t semaphore){
   pthread_mutex_lock(&mutex);
   for (int i = 0; i < MAX_CLIENT; i++) {
     if (clients[i].dSC == dSC) {
@@ -162,6 +163,7 @@ void remove_client(int dSC){
     }
   }
   pthread_mutex_unlock(&mutex);
+  sem_post(&semaphore);
   nbr_of_clients--;
   close(dSC);
   printf("Client disconnected\n");

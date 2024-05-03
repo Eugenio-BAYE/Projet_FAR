@@ -60,6 +60,10 @@ void execute_command(const char *command, int dSC) {
     cmd_dascalu(dSC);
     return;
   }
+  if (strncmp(command, "@msg ", 5) == 0) {
+    cmd_msg(dSC, command);
+    return;
+  }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");
 }
 

@@ -53,3 +53,36 @@ void cmd_dascalu(int dSC){
   int message_size = strlen(message) + 1; 
   broadcast_message(dSC, message, message_size);
 }
+
+void cmd_msg(int dSC, const char* command) {
+  printf("cmd_msg\n");
+  char *command_copy = strdup(command);
+  printf("cmd_msg : strdup\n");
+  if (command_copy == NULL) {
+    fprintf(stderr, "Memory allocation failed\n");
+    return;
+  }
+
+  char *cmd = strtok(command_copy, " ");
+  char *username = strtok(NULL, " ");
+  char *message = strtok(NULL, "");
+
+  if (username == NULL || message == NULL) {
+    send_msg(dSC, "Error: Invalid command syntax. Use @msg <username> <message>");
+  } else {
+    int recipient = find_client_by_username(username);
+    if (recipient == -1) {
+      send_msg(dSC, "Error: User not found");
+    } else {
+      int size = strlen(message)+1+5;
+      char* msg = malloc(size);
+      snprintf(msg, size, "->Me %s", message);
+      int formated_size = formated_msg_size(dSC, size);
+      char* formated_msg = malloc(size);
+      format_msg(msg, dSC, size, formated_msg);
+      send_msg(recipient, formated_msg);
+    }
+  }
+
+  free(command_copy);
+}

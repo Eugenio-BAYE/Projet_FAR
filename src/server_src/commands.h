@@ -31,5 +31,6 @@ void cmd_size(int dSC);
  */
 void cmd_dascalu(int dSC);
 
+void cmd_msg(int dSC, const char *command);
 
 #endif

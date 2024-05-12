@@ -59,6 +59,6 @@ Open a terminal window on another computer and launch the client file :
 
 ### Using the app
 
-Each client can send messages to other clients by typing the message and pressing enter
+Each client can send messages to the other clients by typing the message and pressing enter
 Clients can use commands by typing @ before the command (ex. @pileouface)
-CLients can disconnect by typing fin
+Clients can disconnect by typing @quit and shutdown the server by typing @shutdown

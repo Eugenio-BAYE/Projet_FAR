@@ -1,6 +1,7 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
+#include <semaphore.h>
 /* cmd_random : Send a random integer to the client
  * Parameters : int dSC (file descriptor of the client)
  * Returns : Nothing
@@ -31,5 +32,10 @@ void cmd_size(int dSC);
  */
 void cmd_dascalu(int dSC);
 
+void cmd_msg(int dSC, const char *command);
+
+void cmd_quit(int dSC ,sem_t semaphore);
+
+void cmd_shutdown(int dSC);
 
 #endif

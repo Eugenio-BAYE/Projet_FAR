@@ -22,6 +22,24 @@ static Client clients[MAX_CLIENT];
 static int nbr_of_clients = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+
+void find_client_username(int dSC, char username[]){
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i].dSC==dSC) {
+      snprintf(username, 21, "%s", clients[i].username);
+    }
+  }
+}
+
+int find_client_by_username(const char *username) {
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (strcmp(clients[i].username, username) == 0) {
+      return clients[i].dSC;
+    }
+  }
+  return -1; // Return -1 if the client was not found
+}
+
 int formated_msg_size(int dSC, int msg_size){
   int size = 0;
   for(int i=0; i<MAX_CLIENT; i++){
@@ -166,6 +184,7 @@ void remove_client(int dSC, sem_t semaphore){
   for (int i = 0; i < MAX_CLIENT; i++) {
     if (clients[i].dSC == dSC) {
       clients[i].dSC = 0;
+      strcpy(clients[i].username, "Anonymous");
       break;
     }
   }

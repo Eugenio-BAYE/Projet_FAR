@@ -1,6 +1,7 @@
 #ifndef SERVER_UTILS_H
 #define SERVER_UTILS_H
 
+#include <semaphore.h>
 
 /* is_a_command : Checks if the message is a command
  * Parameters : const char *msg - A pointer to a string which will be checked.
@@ -12,7 +13,7 @@ int is_a_command(char* msg);
  * Parameters : const char *command (command to execute), int dSC (file descriptor of the client)
  * Returns : Nothing
  */
-void execute_command(const char *command, int dSC);
+void execute_command(const char *command, int dSC, sem_t semaphore);
 
 /* send_msg : Send a message to a client
  * Parameters : int dSC (file descriptor of the client), const char *msg(message to send)

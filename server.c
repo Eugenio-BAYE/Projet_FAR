@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <time.h>
+#include <string.h>
 #include <semaphore.h>
 
 // Include files
@@ -30,6 +31,13 @@ void sigint_handler(int sig_num){
   exit(0);
 }
 
+void shutdown_server(){
+  printf("Server shutting down\n");
+  shutdown(dS,2);
+  close(dS);
+  exit(0);
+}
+
 /* handle_client : Thread-dedicated function to handle each client
  * Precondition : No more than <MAX_CLIENT> clients to handle
  * Parameters : struct handle_client_args -> int dSC_sender (file descriptor of the sender client)
@@ -39,6 +47,11 @@ void* handle_client(void* args){
   int dSC_sender=t_args->dSC_sender;
   sem_t semaphore=t_args->semaphore;
   ask_username(dSC_sender);
+  char username[21];
+  find_client_username(dSC_sender, username);
+  char msg[50];
+  sprintf(msg, "Welcome %s to the server\n", username);
+  broadcast_message(dSC_sender, msg, strlen(msg)+1);
   while(1){
     puts ("Ready to receive");
     size_t inputLength;
@@ -50,7 +63,6 @@ void* handle_client(void* args){
       pthread_exit(NULL);
       break;
     }
-    printf("%ld\n", inputLength);
     // Receive message
     char * msg = malloc(inputLength);
     int size_of_received_message = receive_message(dSC_sender, msg, inputLength);
@@ -63,7 +75,7 @@ void* handle_client(void* args){
     }
     // Check message to know if it's a message or a command
     if(is_a_command(msg) == 1){
-      execute_command(msg, dSC_sender);
+      execute_command(msg, dSC_sender, semaphore);
     }
     else{
       int size = formated_msg_size(dSC_sender, inputLength);

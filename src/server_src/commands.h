@@ -38,4 +38,6 @@ void cmd_quit(int dSC ,sem_t semaphore);
 
 void cmd_shutdown(int dSC);
 
+void cmd_man(int dSC);
+
 #endif

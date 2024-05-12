@@ -105,3 +105,19 @@ void cmd_quit(int dSC, sem_t semaphore){
   send_msg(dSC, "Disconnecting from server...\n");
   remove_client(dSC, semaphore);
 }
+
+
+void cmd_man(int dSC){
+  FILE *file = fopen("src/server_src/man.txt", "r");
+  if (file == NULL) {
+    send_msg(dSC, "Error opening man.txt");
+    return;
+  }
+
+  char line[256];
+  while (fgets(line, sizeof(line), file)) {
+    send_msg(dSC, line);
+  }
+
+  fclose(file);
+}

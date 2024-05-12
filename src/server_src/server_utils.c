@@ -73,6 +73,10 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
     cmd_shutdown(dSC);
     return;
   }
+  if (strcmp(command, "@man\0")==0){
+    cmd_man(dSC);
+    return;
+  }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");
 }
 

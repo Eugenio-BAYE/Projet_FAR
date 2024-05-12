@@ -5,6 +5,7 @@
 
 #endif // !CLIENT_HANDLING_H
 
+void find_client_username(int dSC, char username[]);
 int find_client_by_username(const char *username);
 int get_nbr_of_clients();
 int get_max_client();

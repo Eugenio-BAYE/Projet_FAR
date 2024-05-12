@@ -144,10 +144,10 @@ void* receiveMsg(void* args) {
       free(msg);
       pthread_exit(0);
     }
+    
+    puts(msg);      
 
-    puts (msg);
-
-    // Check if the loop is finished with the word "fin"
+        // Check if the loop is finished with the word "fin"
     if (compareFin(msg) == 1){
       isRunning = 0;
       puts ("End of program");

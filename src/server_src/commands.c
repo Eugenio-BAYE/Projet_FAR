@@ -4,8 +4,9 @@
 #include <string.h>
 
 #include "client_handling.h"
+#include "../../server.h"
 
-void cmd_random(int dSC){
+void cmd_random(int dSC) {
   int random = rand() %1000;
   int num_digits = snprintf(NULL, 0, "%d", random);
   
@@ -88,4 +89,18 @@ void cmd_msg(int dSC, const char* command) {
   }
 
   free(command_copy);
+}
+
+void cmd_shutdown(int dSC){
+  char username[21];
+  find_client_username(dSC, username);
+  char msg[50];
+  sprintf(msg, "%s closed the server\n", username);
+  broadcast_message(dSC, msg, strlen(msg)+1);
+  shutdown_server();
+}
+
+void cmd_quit(int dSC){
+  send_msg(dSC, "Disconnecting from server...\n");
+  remove_client(dSC);
 }

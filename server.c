@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <time.h>
+#include <string.h>
 
 // Include files
 #include "src/server_src/client_handling.h" 
@@ -28,6 +29,13 @@ void sigint_handler(int sig_num){
   exit(0);
 }
 
+void shutdown_server(){
+  printf("Server shutting down\n");
+  shutdown(dS,2);
+  close(dS);
+  exit(0);
+}
+
 /* handle_client : Thread-dedicated function to handle each client
  * Precondition : No more than <MAX_CLIENT> clients to handle
  * Parameters : struct handle_client_args -> int dSC_sender (file descriptor of the sender client)
@@ -36,6 +44,11 @@ void* handle_client(void* args){
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int dSC_sender=t_args->dSC_sender;
   ask_username(dSC_sender);
+  char username[21];
+  find_client_username(dSC_sender, username);
+  char msg[50];
+  sprintf(msg, "Welcome %s to the server\n", username);
+  broadcast_message(dSC_sender, msg, strlen(msg)+1);
   while(1){
     puts ("Ready to receive");
     size_t inputLength;
@@ -47,7 +60,6 @@ void* handle_client(void* args){
       pthread_exit(NULL);
       break;
     }
-    printf("%ld\n", inputLength);
     // Receive message
     char * msg = malloc(inputLength);
     int size_of_received_message = receive_message(dSC_sender, msg, inputLength);

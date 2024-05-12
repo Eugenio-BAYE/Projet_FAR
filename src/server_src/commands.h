@@ -33,4 +33,8 @@ void cmd_dascalu(int dSC);
 
 void cmd_msg(int dSC, const char *command);
 
+void cmd_quit(int dSC);
+
+void cmd_shutdown(int dSC);
+
 #endif

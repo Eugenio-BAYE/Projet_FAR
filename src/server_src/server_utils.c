@@ -40,19 +40,19 @@ void execute_command(const char *command, int dSC) {
     perror("Can't execute_command() on empty command");
   }
 
-  if (strcmp(command, "@size\n") == 0) {
+  if (strcmp(command, "@size\0") == 0) {
     cmd_size(dSC);
     return;
   }
-  if (strcmp(command, "@client\n") == 0) {
+  if (strcmp(command, "@client\0") == 0) {
     cmd_client(dSC);
     return;
   }
-  if (strcmp(command, "@random\n") == 0) {
+  if (strcmp(command, "@random\0") == 0) {
     cmd_random(dSC);
     return;
   }
-  if (strcmp(command, "@pileouface\n") == 0) {
+  if (strcmp(command, "@pileouface\0") == 0) {
     cmd_pile_ou_face(dSC);
     return;
   }
@@ -62,6 +62,14 @@ void execute_command(const char *command, int dSC) {
   }
   if (strncmp(command, "@msg ", 5) == 0) {
     cmd_msg(dSC, command);
+    return;
+  }
+  if (strcmp(command, "@quit\0")==0){
+    cmd_quit(dSC);
+    return;
+  }
+  if (strcmp(command, "@shutdown\0")==0){
+    cmd_shutdown(dSC);
     return;
   }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");

@@ -21,6 +21,7 @@ typedef struct {
 static Client clients[MAX_CLIENT];
 static int nbr_of_clients = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+// We will keep the semaphore herer as a global variable
 
 
 void find_client_username(int dSC, char username[]){
@@ -87,7 +88,7 @@ void update_username(int dSC, char username[]){
   }
 }
 
-void ask_username(int dSC) {
+int ask_username(int dSC, sem_t semaphore) {
   int is_valid = 0;
   char username[21];
   memset(username, '\0', 21);
@@ -95,7 +96,10 @@ void ask_username(int dSC) {
   while(!is_valid){
     send_msg(dSC, message);
     size_t input_length;
-    recv(dSC, &input_length, sizeof(input_length), 0);
+    if (recv(dSC, &input_length, sizeof(input_length), 0)==0){
+      remove_client(dSC, semaphore);
+      return 0;
+    }
     char *input = malloc(input_length);
     int length = receive_message(dSC, input, input_length);
     if (length > 0) {
@@ -107,6 +111,7 @@ void ask_username(int dSC) {
         strncpy(username, input, sizeof(username) - 1);
         username[sizeof(username) - 1] = '\0'; // ensure null termination
         update_username(dSC, username);
+        return 1;
       }
       else if(valid_code == 2){
         send_msg(dSC, "Username is too long\0");

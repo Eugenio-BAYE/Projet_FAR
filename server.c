@@ -46,7 +46,9 @@ void* handle_client(void* args){
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int dSC_sender=t_args->dSC_sender;
   sem_t semaphore=t_args->semaphore;
-  ask_username(dSC_sender);
+  if(ask_username(dSC_sender, semaphore)==0){
+    pthread_exit(NULL);
+  }
   char username[21];
   find_client_username(dSC_sender, username);
   char msg[50];

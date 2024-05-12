@@ -23,7 +23,7 @@ void remove_client(int dSC, sem_t semaphore);
  *            3 if it is aldready taken (FAILURE)
  */
 int is_username_valid(char username[]);
-void ask_username(int dSC);
+int ask_username(int dSC, sem_t semaphore);
 void update_username(int dSC, char username[]);
 
 int formated_msg_size(int dSC, int msg_size);

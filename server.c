@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <time.h>
 #include <string.h>
+#include <semaphore.h>
 
 // Include files
 #include "src/server_src/client_handling.h" 
@@ -16,6 +17,7 @@
 static int dS ;
 struct handle_client_args{
   int dSC_sender;
+  sem_t semaphore;
 };
 // ------------------------------------------------------
 
@@ -43,6 +45,7 @@ void shutdown_server(){
 void* handle_client(void* args){
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int dSC_sender=t_args->dSC_sender;
+  sem_t semaphore=t_args->semaphore;
   ask_username(dSC_sender);
   char username[21];
   find_client_username(dSC_sender, username);
@@ -55,7 +58,7 @@ void* handle_client(void* args){
 
     // Receive the size of the message
     if (recv(dSC_sender, &inputLength, sizeof(size_t), 0) <= 0) {
-      remove_client(dSC_sender);
+      remove_client(dSC_sender, semaphore);
       printf("Client disconnect\n");
       pthread_exit(NULL);
       break;
@@ -65,14 +68,14 @@ void* handle_client(void* args){
     int size_of_received_message = receive_message(dSC_sender, msg, inputLength);
     if(size_of_received_message <= 0) {
       free(msg);
-      remove_client(dSC_sender);
+      remove_client(dSC_sender, semaphore);
       printf("Client disconnected\n");
       pthread_exit(NULL);
       break;
     }
     // Check message to know if it's a message or a command
     if(is_a_command(msg) == 1){
-      execute_command(msg, dSC_sender);
+      execute_command(msg, dSC_sender, semaphore);
     }
     else{
       int size = formated_msg_size(dSC_sender, inputLength);
@@ -98,16 +101,23 @@ int main(int argc, char *argv[]) {
 
   // Server socket connection
   dS = new_server_socket(atoi(argv[1]));
+  sem_t semaphore = new_semaphore();
   while (1){
+    
+    if (can_accept_new_client(&semaphore) < 0) {
+      perror("Failed to acquire semaphore. Cannot accept new client.\n");
+      return 1;
+    }
     int dSC = new_client_connection(dS);
-    while(!can_accept_new_client()){
-      sleep(5);
+    if (dSC < 0) {
+      perror("Failed to accept new client connection.\n");
+      return 1;
     }
 
     pthread_t thread;
     add_new_client(dSC);
 
-    struct handle_client_args arg = {dSC};
+    struct handle_client_args arg = {dSC, semaphore};
     if (pthread_create(&thread, NULL, handle_client, (void*)&arg) != 0) {
       perror("pthread_create");
       return 1;

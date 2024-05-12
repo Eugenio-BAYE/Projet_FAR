@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <semaphore.h>
 
 #include "client_handling.h"
 #include "../../server.h"
@@ -100,7 +101,7 @@ void cmd_shutdown(int dSC){
   shutdown_server();
 }
 
-void cmd_quit(int dSC){
+void cmd_quit(int dSC, sem_t semaphore){
   send_msg(dSC, "Disconnecting from server...\n");
-  remove_client(dSC);
+  remove_client(dSC, semaphore);
 }

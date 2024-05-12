@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdlib.h>
+#include <semaphore.h>
 
 #include "commands.h"
 
@@ -35,7 +36,7 @@ int is_a_command(const char *msg) {
   return 0;
 }
 
-void execute_command(const char *command, int dSC) {
+void execute_command(const char *command, int dSC, sem_t semaphore) {
   if (command == NULL){
     perror("Can't execute_command() on empty command");
   }
@@ -65,7 +66,7 @@ void execute_command(const char *command, int dSC) {
     return;
   }
   if (strcmp(command, "@quit\0")==0){
-    cmd_quit(dSC);
+    cmd_quit(dSC, semaphore);
     return;
   }
   if (strcmp(command, "@shutdown\0")==0){

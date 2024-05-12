@@ -1,0 +1,17 @@
+man : This commands show the list of all available commands
+
+random: This command generates a random number between 0 and 999 and sends it to the client.
+
+pile_ou_face: This command generates a random number between 0 and 1. If the number is 1, it sends "pile" to the client. If the number is 0, it sends "face" to the client.
+
+client: This command gets the number of clients currently connected to the server and sends this number to the client.
+
+size: This command gets the maximum number of clients that can connect to the server and sends this number to the client.
+
+dascalu: This command sends the message "DASCALUUU" to all connected clients.
+
+msg: This command sends a private message to a specific user. The command should be followed by the username of the recipient and the message to send. For example: msg username Hello, world!.
+
+quit: This command disconnects the client from the server.
+
+shutdown: This command shuts down the server.

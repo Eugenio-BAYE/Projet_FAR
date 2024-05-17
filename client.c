@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 
   // Connect the socket
   signal(SIGINT, handle_sigint);
-  setdS(connect_socket(argv[1], atoi(argv[2])));
+  set_dS(connect_socket(argv[1], atoi(argv[2])));
 
   if (create_threads() != 0) {
       return 1;
@@ -30,6 +30,6 @@ int main(int argc, char *argv[]) {
   while (get_is_running()){
     sleep(1);
   }
-  shutdown(get_dS, 2); // Close the connection
+  shutdown(get_dS(), 2); // Close the connection
   return 1;
 }

@@ -5,10 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 
-struct thread_args {
-  int dS;
-};
-
 /* create_threads : Creates and manages the threads for sending and receiving messages.
  * Parameters: None.
  * Returns: 0 on success, 1 on error.

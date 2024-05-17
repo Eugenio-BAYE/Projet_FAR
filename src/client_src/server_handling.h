@@ -43,12 +43,26 @@ void handle_sigint(int sig);
  */
 int connect_socket(char * arg1, int arg2);
 
+/* send_msg : Sends a message through the specified socket.
+ * Parameters: - int dS: The socket descriptor.
+ *             - char* buffer: The message buffer.
+ *             - size_t input_length: The length of the message.
+ * Returns: 0 on success, -1 on error.
+ */
+int send_msg(int dS, char* buffer, size_t input_length);
+
 /** send_msg : Send messages from the user to a server over a socket.
  * Parameters: void *args: Pointer to a 'thread_args' structure which the socket descriptor 'dS'.
  * Errors: If sending the size or message fails or the socket disconnect, it will print an error and exit the thread.
  * Returns: NULL on exit, either after an error or after a termination command ("fin").
  */
 void* loop_send_msg(void * args);
+
+/* receive_message : Receives a message through the specified socket.
+ * Parameters: - int dS: The socket descriptor.
+ * Returns: 0 on success, -1 on error.
+ */
+int receive_msg(int dS);
 
 /** receive_msg : Receive messages from the user to a server over a socket.
  * Parameters: void *args: Pointer to a 'thread_args' structure which the socket descriptor 'dS'.

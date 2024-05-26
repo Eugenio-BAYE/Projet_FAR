@@ -144,6 +144,7 @@ void* loop_send_msg(void* args) {
         }
 
         size_t input_length = strlen(buffer);
+        execute_command(buffer, dS);
         if (send_msg(dS, buffer, input_length) == -1) {
             pthread_exit(0);
         }

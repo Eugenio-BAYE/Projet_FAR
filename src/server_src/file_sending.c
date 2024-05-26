@@ -18,6 +18,11 @@
 
 int dS_sender;
 
+//*********|WARNING|************/
+// Here it's the "@receive_file" command handling so the
+// server is actually SENDING the file to the client
+
+
 int create_file_sending_socket(int port) {
     int file_sending_port = port - 1;
     int file_sending_socket = new_server_socket(file_sending_port);

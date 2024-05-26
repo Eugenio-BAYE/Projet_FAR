@@ -12,6 +12,10 @@
 #include "client_handling.h"
 #include "server_utils.h"
 
+//*********|WARNING|************/
+// Here it's the "@send_file" command handling so the
+// server is actually RECEIVING the file from the client
+
 int dS_receiver;
 
 void create_file_receiving_socket(int port){

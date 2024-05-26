@@ -6,6 +6,7 @@
 
 #include "file_receiving.h"
 #include "file_sending.h"
+#include "server_handling.h"
 
 void cmd_send_file() {
   printf("cmd_file_send\n");

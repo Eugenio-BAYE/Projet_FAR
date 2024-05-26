@@ -9,6 +9,10 @@
 
 #include "src/client_src/server_handling.h"
 #include "src/client_src/threads.h"
+#include "src/client_src/file_sending.h"
+#include "src/client_src/file_receiving.h"
+
+
 
 int main(int argc, char *argv[]) {
   // Check the number of arguments
@@ -21,6 +25,8 @@ int main(int argc, char *argv[]) {
   // Connect the socket
   signal(SIGINT, handle_sigint);
   set_dS(connect_socket(argv[1], atoi(argv[2])));
+  set_addr(argv[1]);
+  set_port(atoi(argv[2]));
 
   if (create_threads() != 0) {
       return 1;

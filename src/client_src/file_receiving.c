@@ -11,14 +11,6 @@
 
 int dS_receiver;
 
-void create_file_receiving_socket(int port){
-  int file_receiving_port = port - 1;
-  int file_receiving_socket = new_server_socket(file_receiving_port);
-  dS_receiver = file_receiving_socket;
-  printf("%d\n", dS_receiver);
-  printf("Created file receiving socket\n");
-} 
-
 // Create directory if it does not exist
 void create_directory_if_not_exists(const char *path) {
   struct stat st = {0};
@@ -89,29 +81,23 @@ void receive_and_write_file(int socket, FILE *file) {
 }
 
 void* file_receiving_thread(void *arg) {
-  struct sockaddr_in client_addr;
-  socklen_t client_addr_len = sizeof(client_addr);
-  int dSC = accept(dS_receiver, (struct sockaddr*) &client_addr, &client_addr_len);
-  if (dSC < 0) {
-    perror("Failed to accept new client connection.\n");
-    pthread_exit(NULL);
-  }
+  dS_receiver = connect_socket(get_addr(), get_port()+1);
 
   char input_buffer[32]; // Buffer to hold input string
   if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL) {
     perror("Failed to read input");
-    close(dSC);
+    close(dS_receiver);
     pthread_exit(NULL);
   }
 
   // Send the integer as a string to the server
-  if (send_msg(dSC, input_buffer, strlen(input_buffer) + 1) == -1) { 
-    close(dSC);
+  if (send_msg(dS_receiver, input_buffer, strlen(input_buffer) + 1) == -1) { 
+    close(dS_receiver);
     pthread_exit(NULL);
   }
 
   // Following the original task
-  char *file_name = receive_file_name(dSC);
+  char *file_name = receive_file_name(dS_receiver);
   create_directory_if_not_exists("./stocked_files");
 
   char file_path[512];
@@ -121,12 +107,12 @@ void* file_receiving_thread(void *arg) {
   FILE *file = fopen(file_path, "wb");
   if (!file) {
     perror("Failed to open file for writing");
-    close(dSC);
+    close(dS_receiver);
     pthread_exit(NULL);
   }
 
-  receive_and_write_file(dSC, file);
+  receive_and_write_file(dS_receiver, file);
 
-  close(dSC);
+  close(dS_receiver);
   pthread_exit(NULL);
 }

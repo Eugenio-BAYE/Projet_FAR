@@ -42,6 +42,33 @@ void handle_sigint(int sig) {
   exit(1);
 }
 
+typedef struct {
+    int port;
+    char *addr;
+} NetworkConfig;
+
+// Getter pour le port
+int get_port(const NetworkConfig *config) {
+    return config->port;
+}
+
+// Setter pour le port
+void set_port(NetworkConfig *config, int port) {
+    config->port = port;
+}
+
+// Getter pour l'adresse
+const char* get_addr(const NetworkConfig *config) {
+    return config->addr;
+}
+
+// Setter pour l'adresse
+void set_addr(NetworkConfig *config, const char *addr) {
+    // Libérer la mémoire de l'ancienne adresse si nécessaire
+    free(config->addr);  // Assurez-vous que config->addr est initialisé à NULL ou alloué avant
+    config->addr = strdup(addr); // strdup copie la chaîne et alloue de la mémoire pour la nouvelle adresse
+}
+
 /* handle_local_sigint : Handles the SIGINT signal (Ctrl-C interruption) by shutting down the specified socket and exiting the program.
  * Parameters: - int sig: The signal number received by the handler.
  * Returns: None, as the function terminates the program by calling exit(1).
@@ -51,7 +78,7 @@ void handle_local_sigint(int sig) {
     exit(1);
 }
 
-int connect_socket(char * arg1, int arg2 ){
+int connect_socket(const char * arg1, int arg2 ){
 
     signal(SIGINT, handle_local_sigint);
     // Create the socket
@@ -207,50 +234,4 @@ void* loop_receive_msg(void* args) {
         }
     }
     return NULL;
-}
-
-/* new_server_socket : Create a new TCP server socket
- * Parameters : int port (socket port)
- * Returns : int dS (file descriptor, non-negative)
- * Postconditions : Non-blocking, can throw errors
- */
-int new_server_socket(int port){
-  // Socket creating
-  // "socket()" : is not blocking, catchng errors:
-  int dS = socket(PF_INET, SOCK_STREAM, 0);
-  if (dS==-1){
-    perror("Error creating socket\n");
-    exit(EXIT_FAILURE);
-  }
-  printf("Socket created\n");
-
-  // Set SO_REUSEADDR socket option to reuse port
-  int opt = 1;
-  if (setsockopt(dS, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-    perror("setsockopt");
-    exit(EXIT_FAILURE);
-  }
-
-  // Structure 'ad' of type 'sockaddr_in' to store socket infos
-  struct sockaddr_in ad;
-  ad.sin_family = AF_INET; // Set adress to IPv4 
-  ad.sin_addr.s_addr = INADDR_ANY ; // Allow connections from any IP
-  ad.sin_port = htons(port) ; // Set port number from arg 1
-
-  // Socket binding
-  // "bind()" is not blocking, catching errors :
-  if (bind(dS, (struct sockaddr*)&ad, sizeof(ad))==-1){
-    perror("Error binding socket\n");
-    exit(EXIT_FAILURE);
-  }
-  printf("Socket binded\n");
-
-  // Listening mode
-  // "listen()" is not blocking, catching errors :
-  if (listen(dS, 2)==-1){
-    perror("Error binding socket\n");
-    exit(EXIT_FAILURE);
-  }
-
-  return dS;
 }

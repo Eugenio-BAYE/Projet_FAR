@@ -14,14 +14,6 @@
 
 int dS_sender;
 
-int create_file_sending_socket(int port) {
-    int file_sending_port = port + 1;
-    int file_sending_socket = new_server_socket(file_sending_port);
-    dS_sender = file_sending_socket;
-    printf("Created file sending socket\n");
-    return file_sending_socket;
-}
-
 // Send the list of available files to the client
 void send_file_list() {
     DIR *dir;
@@ -133,14 +125,7 @@ void send_file_to_client(int dSC, const char *file_name) {
 
 // Main thread function to handle file sending
 void* file_sending_thread(void* args) {
-  struct sockaddr_in client_addr;
-  socklen_t client_addr_len = sizeof(client_addr);
-  int dSC = accept(dS_sender, (struct sockaddr*) &client_addr, &client_addr_len);
-  printf("New client connected\n");
-    if (dSC < 0) {
-        perror("Failed to accept new client connection.\n");
-        pthread_exit(NULL);
-    }
+    dS_sender = connect_socket(get_addr(), get_port()+1);
 
     send_file_list();
 
@@ -148,13 +133,13 @@ void* file_sending_thread(void* args) {
     int selection_status = receive_client_selection(selected_file);
 
     if (selection_status == 1) {
-        send_file_to_client(dSC, selected_file);
+        send_file_to_client(dS_sender, selected_file);
     } else if (selection_status == 0) {
         printf("Client canceled the file transfer.\n");
     } else {
         printf("Invalid selection from client.\n");
     }
 
-    close(dSC);
+    close(dS_sender);
     pthread_exit(NULL);
 }

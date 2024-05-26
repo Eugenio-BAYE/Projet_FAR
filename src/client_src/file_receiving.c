@@ -1,4 +1,3 @@
-#include "client_handling.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -8,7 +7,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/stat.h>
-
+#include "server_handling.h"
 
 int dS_receiver;
 
@@ -89,7 +88,7 @@ void receive_and_write_file(int socket, FILE *file) {
   fclose(file);
 }
 
-void* file_receiving_thread() {
+void* file_receiving_thread(void *arg) {
   struct sockaddr_in client_addr;
   socklen_t client_addr_len = sizeof(client_addr);
   int dSC = accept(dS_receiver, (struct sockaddr*) &client_addr, &client_addr_len);

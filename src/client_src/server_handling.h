@@ -71,4 +71,12 @@ int receive_msg(int dS);
  */
 void* loop_receive_msg(void* args);
 
+
+/**
+ * Create a new TCP server socket and configure it for use.
+ * @param port The port number on which the server socket will listen.
+ * @return The file descriptor for the newly created socket. Exits on failure.
+ */
+int new_server_socket(int port);
+
 #endif

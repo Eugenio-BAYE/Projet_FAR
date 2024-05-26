@@ -1,4 +1,3 @@
-#include "server_utils.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,23 +6,6 @@
 
 #include "file_receiving.h"
 #include "file_sending.h"
-
-void execute_command(const char *command, int dSC) {
-  if (strcmp(command, "@send_file\0")==0){
-    //*********|WARNING|************/
-    // Here it's the "@send_file" command handling so the
-    // server is actually RECEIVING the file to the client
-    cmd_send_file(dSC);
-    return;
-  }
-  if (strcmp(command, "@receive_file\0")==0){
-    //*********|WARNING|************/
-    // Here it's the "@receive_file" command handling so the
-    // server is actually SENDING the file to the client
-    cmd_receive_file();
-    return;
-  }
-}
 
 void cmd_send_file() {
   printf("cmd_file_send\n");
@@ -55,4 +37,21 @@ void cmd_receive_file(){
     return;
   }
 
+}
+
+void execute_command(const char *command, int dSC) {
+  if (strcmp(command, "@send_file\0")==0){
+    //*********|WARNING|************/
+    // Here it's the "@send_file" command handling so the
+    // server is actually RECEIVING the file to the client
+    cmd_send_file();
+    return;
+  }
+  if (strcmp(command, "@receive_file\0")==0){
+    //*********|WARNING|************/
+    // Here it's the "@receive_file" command handling so the
+    // server is actually SENDING the file to the client
+    cmd_receive_file();
+    return;
+  }
 }

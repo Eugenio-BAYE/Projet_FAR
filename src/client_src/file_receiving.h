@@ -48,6 +48,6 @@ void receive_and_write_file(int socket, FILE *file);
  * creates necessary directories, and manages the file writing process.
  * @return Always returns NULL, ending the thread on completion or error.
  */
-void* file_receiving_thread(void);
+void* file_receiving_thread(void *arg);
 
 #endif // FILE_RECEIVING_H

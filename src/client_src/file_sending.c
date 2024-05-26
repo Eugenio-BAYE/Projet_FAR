@@ -7,10 +7,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
-
 #include "server_handling.h"
-#include "client_handling.h"
-#include "server_utils.h"
 
 #define DIRECTORY_PATH "./stocked_files"
 #define BUFFER_SIZE 1024
@@ -40,21 +37,21 @@ void send_file_list() {
 
     // Send the header of the file list
     snprintf(buffer, BUFFER_SIZE, "Available files:\n");
-    put(buffer);
+    puts(buffer);
 
     // List the files and send to the client
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG) { // Regular file
             file_count++;
             snprintf(buffer, BUFFER_SIZE, "%d. %s\n", file_count, entry->d_name);
-            put(buffer);
+            puts(buffer);
         }
     }
     closedir(dir);
 
     // Send the command to cancel
     snprintf(buffer, BUFFER_SIZE, "Enter the number of the file to download or 'cancel' to abort:\n");
-    put(buffer);
+    puts(buffer);
 }
 
 // Receive client's selection directly from the terminal

@@ -1,4 +1,5 @@
 // src/server_src/file_receiving.c
+
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -10,19 +11,18 @@
 #include "server_handling.h"
 #include "client_handling.h"
 #include "server_utils.h"
-#include "../../server.h"
 
 int dS_receiver;
 
 void create_file_receiving_socket(int port){
   int file_receiving_port = port + 1;
   int file_receiving_socket = new_server_socket(file_receiving_port);
-  dS_receiver= file_receiving_socket;
+  dS_receiver = file_receiving_socket;
   printf("%d\n", dS_receiver);
   printf("Created file receiving socket\n");
 } 
 
-// Crée un répertoire s'il n'existe pas
+// Create directory if it does not exist
 void create_directory_if_not_exists(const char *path) {
   struct stat st = {0};
   if (stat(path, &st) == -1) {
@@ -64,7 +64,7 @@ void generate_unique_file_path(char *file_path, const char *dir, const char *fil
 
   int counter = 1;
   // Create a file in stocked_files named [file_name][number?] if the 
-  // file name aldready exists
+  // file name already exists
   while (access(file_path, F_OK) == 0) {
     snprintf(file_path, 512, "%s/%s_%d", dir, file_name, counter);
     counter++;
@@ -119,3 +119,4 @@ void* file_receiving_thread() {
   close(dSC);
   pthread_exit(NULL);
 }
+

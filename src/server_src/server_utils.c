@@ -66,7 +66,7 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
     return;
   }
   if (strcmp(command, "@quit\0")==0){
-    cmd_quit(dSC, semaphore);
+    cmd_quit(dSC);
     return;
   }
   if (strcmp(command, "@shutdown\0")==0){
@@ -75,6 +75,20 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
   }
   if (strcmp(command, "@man\0")==0){
     cmd_man(dSC);
+    return;
+  }
+  if (strcmp(command, "@send_file\0")==0){
+    //*********|WARNING|************/
+    // Here it's the "@send_file" command handling so the
+    // server is actually RECEIVING the file to the client
+    cmd_send_file(dSC);
+    return;
+  }
+  if (strcmp(command, "@receive_file\0")==0){
+    //*********|WARNING|************/
+    // Here it's the "@receive_file" command handling so the
+    // server is actually SENDING the file to the client
+    cmd_receive_file();
     return;
   }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");

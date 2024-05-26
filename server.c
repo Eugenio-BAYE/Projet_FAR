@@ -12,12 +12,15 @@
 #include "src/server_src/client_handling.h" 
 #include "src/server_src/server_handling.h"
 #include "src/server_src/server_utils.h"
+#include "src/server_src/semaphore.h"
+#include "src/server_src/file_receiving.h"
+#include "src/server_src/file_sending.h"
 
 // ------------------------------------------------------
 static int dS ;
+static int port;
 struct handle_client_args{
   int dSC_sender;
-  sem_t semaphore;
 };
 // ------------------------------------------------------
 
@@ -38,6 +41,14 @@ void shutdown_server(){
   exit(0);
 }
 
+int get_dS(){
+  return dS;
+}
+
+int get_port(){
+  return port;
+}
+
 /* handle_client : Thread-dedicated function to handle each client
  * Precondition : No more than <MAX_CLIENT> clients to handle
  * Parameters : struct handle_client_args -> int dSC_sender (file descriptor of the sender client)
@@ -45,8 +56,12 @@ void shutdown_server(){
 void* handle_client(void* args){
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int dSC_sender=t_args->dSC_sender;
-  sem_t semaphore=t_args->semaphore;
-  if(ask_username(dSC_sender, semaphore)==0){
+
+  put_in_queue(dSC_sender);
+  add_new_client(dSC_sender);
+  //sem_t semaphore = (sem_t)get_semaphore();
+  sem_t semaphore;
+  if(ask_username(dSC_sender)==0){
     pthread_exit(NULL);
   }
   char username[21];
@@ -54,13 +69,14 @@ void* handle_client(void* args){
   char msg[50];
   sprintf(msg, "Welcome %s to the server\n", username);
   broadcast_message(dSC_sender, msg, strlen(msg)+1);
+
   while(1){
     puts ("Ready to receive");
     size_t inputLength;
 
     // Receive the size of the message
     if (recv(dSC_sender, &inputLength, sizeof(size_t), 0) <= 0) {
-      remove_client(dSC_sender, semaphore);
+      remove_client(dSC_sender);
       printf("Client disconnect\n");
       pthread_exit(NULL);
       break;
@@ -70,7 +86,7 @@ void* handle_client(void* args){
     int size_of_received_message = receive_message(dSC_sender, msg, inputLength);
     if(size_of_received_message <= 0) {
       free(msg);
-      remove_client(dSC_sender, semaphore);
+      remove_client(dSC_sender);
       printf("Client disconnected\n");
       pthread_exit(NULL);
       break;
@@ -102,14 +118,18 @@ int main(int argc, char *argv[]) {
   free_client_list();
 
   // Server socket connection
-  dS = new_server_socket(atoi(argv[1]));
-  sem_t semaphore = new_semaphore();
+  port = atoi(argv[1]);
+  dS = new_server_socket(port);
+  create_file_receiving_socket(port);
+  create_file_sending_socket(port);
+  create_semaphore();
   while (1){
-    
+    /*    
     if (can_accept_new_client(&semaphore) < 0) {
       perror("Failed to acquire semaphore. Cannot accept new client.\n");
       return 1;
     }
+    */
     int dSC = new_client_connection(dS);
     if (dSC < 0) {
       perror("Failed to accept new client connection.\n");
@@ -117,9 +137,8 @@ int main(int argc, char *argv[]) {
     }
 
     pthread_t thread;
-    add_new_client(dSC);
 
-    struct handle_client_args arg = {dSC, semaphore};
+    struct handle_client_args arg = {dSC};
     if (pthread_create(&thread, NULL, handle_client, (void*)&arg) != 0) {
       perror("pthread_create");
       return 1;

@@ -88,7 +88,7 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
     //*********|WARNING|************/
     // Here it's the "@receive_file" command handling so the
     // server is actually SENDING the file to the client
-    cmd_receive_file();
+    cmd_receive_file(dSC);
     return;
   }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");

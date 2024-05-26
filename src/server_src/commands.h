@@ -42,6 +42,6 @@ void cmd_man(int dSC);
 
 void cmd_send_file(int dSC);
 
-void cmd_receive_file();
+void cmd_receive_file(int dSC);
 
 #endif

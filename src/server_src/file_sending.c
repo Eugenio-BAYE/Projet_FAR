@@ -33,6 +33,9 @@ int create_file_sending_socket(int port) {
 
 // Send the list of available files to the client
 void send_file_list(int dSC) {
+
+    send_msg(dSC, "Sending messages on normal port");
+
     DIR *dir;
     struct dirent *entry;
     char buffer[BUFFER_SIZE];
@@ -43,6 +46,7 @@ void send_file_list(int dSC) {
         perror("Failed to open directory");
         return;
     }
+    
 
     // Send the header of the file list
     snprintf(buffer, BUFFER_SIZE, "Available files:\n");
@@ -121,6 +125,7 @@ int receive_client_selection(int dSC, char *selected_file) {
 
 // Send the selected file to the client
 void send_file_to_client(int dSC, const char *file_name) {
+
     char file_path[BUFFER_SIZE];
     snprintf(file_path, BUFFER_SIZE, "%s/%s", DIRECTORY_PATH, file_name);
 
@@ -144,18 +149,26 @@ void send_file_to_client(int dSC, const char *file_name) {
     fclose(file);
 }
 
+struct handle_client_args{
+  int normal_dSC;
+};
+
 // Main thread function to handle file sending
 void* file_sending_thread(void* args) {
+  struct handle_client_args* t_args=(struct handle_client_args*)args;
+  int normal_dSC=t_args->normal_dSC;
     int dSC = new_client_connection(dS_sender);
     if (dSC < 0) {
         perror("Failed to accept new client connection.\n");
         pthread_exit(NULL);
     }
 
-    send_file_list(dSC);
+  printf("%d normal %d specific\n", normal_dSC, dSC);
+
+    send_file_list(normal_dSC);
 
     char selected_file[BUFFER_SIZE];
-    int selection_status = receive_client_selection(dSC, selected_file);
+    int selection_status = receive_client_selection(normal_dSC, selected_file);
 
     if (selection_status == 1) {
         send_file_to_client(dSC, selected_file);

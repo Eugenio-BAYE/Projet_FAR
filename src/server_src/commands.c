@@ -141,11 +141,18 @@ void cmd_send_file() {
   }
 }
 
-void cmd_receive_file(){
+void cmd_receive_file(int dSC){
   printf("cmd_file_receive\n");
   pthread_t file_thread;
 
-  if (pthread_create(&file_thread, NULL, file_sending_thread, NULL) != 0) {
+  struct handle_client_args{
+    int normal_dSC;
+  };
+
+
+    struct handle_client_args arg = {dSC};
+
+  if (pthread_create(&file_thread, NULL, file_sending_thread, (void*)&arg) != 0) {
     perror("Failed to create file sending thread");
     return;
   }

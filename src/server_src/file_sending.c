@@ -13,7 +13,7 @@
 #include "client_handling.h"
 #include "server_utils.h"
 
-#define DIRECTORY_PATH "../stocked_files"
+#define DIRECTORY_PATH "./stocked_files"
 #define BUFFER_SIZE 1024
 
 int dS_sender;

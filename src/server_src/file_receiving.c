@@ -101,10 +101,10 @@ void* file_receiving_thread() {
   send_msg(dSC, "Server ready to receive file");
 
   char *file_name = receive_file_name(dSC);
-  create_directory_if_not_exists("../stocked_files");
+  create_directory_if_not_exists("./stocked_files");
 
   char file_path[512];
-  generate_unique_file_path(file_path, "../stocked_files", file_name);
+  generate_unique_file_path(file_path, "./stocked_files", file_name);
   free(file_name);
 
   FILE *file = fopen(file_path, "wb");

@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
+  printf("test0")
   // Connect the socket
   signal(SIGINT, handle_sigint);
   print("test1");

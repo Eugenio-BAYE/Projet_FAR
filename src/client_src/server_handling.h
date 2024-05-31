@@ -12,18 +12,15 @@
 
 #define MSG_LENGTH 256
 
-// Structure pour les arguments de thread
 typedef struct {
     int dS;
 } thread_args;
 
-// Variables globales
 extern int dS;
 extern int is_running;
 extern int port;
 extern char *addr;
 
-// Fonctions de manipulation de NetworkConfig
 int get_port();
 void set_port(int port);
 const char* get_addr();
@@ -33,7 +30,6 @@ void set_dS(int value);
 int get_is_running();
 void set_is_running(int value);
 
-// Fonctions pour la gestion des signaux
 void handle_sigint(int sig);
 void handle_local_sigint(int sig);
 

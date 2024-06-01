@@ -12,7 +12,10 @@
 #define DIRECTORY_PATH "./stocked_files"
 #define BUFFER_SIZE 1024
 
-int dS_sender;
+typedef struct {
+    int dS_sender;
+    char *selected_file;
+} FileSendArgs;
 
 // Send the list of available files to the client
 void send_file_list() {
@@ -40,10 +43,6 @@ void send_file_list() {
         }
     }
     closedir(dir);
-
-    // Send the command to cancel
-    snprintf(buffer, BUFFER_SIZE, "Enter the number of the file to download or 'cancel' to abort:\n");
-    puts(buffer);
 }
 
 // Receive client's selection directly from the terminal
@@ -51,23 +50,31 @@ int receive_client_selection(char *selected_file) {
     char buffer[1024]; // Reasonable size for user input
 
     printf("Enter the number of the file to download or 'cancel' to abort: ");
-
     if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
         perror("Error reading input");
         return -1;
     }
 
     // Remove any newline character included by fgets
-    buffer[strcspn(buffer, "\n")] = '\0';
+    char *newline = strchr(buffer, '\n');  // Trouve le premier '\n'
+    if (newline) {
+        *newline = '\0';  // Remplace par '\0' si '\n' est trouvé
+    }
+
+    printf("Input received: '%s'\n", buffer); // Affiche l'entrée après suppression de la nouvelle ligne
 
     // Check if the client canceled
     if (strncmp(buffer, "cancel", 6) == 0) {
+        printf("Client canceled the operation.\n");
         return 0;
     }
 
     // Convert the selection to a number
     int file_index = atoi(buffer);
+    printf("File index selected: %d\n", file_index); // Affiche l'indice du fichier sélectionné
+
     if (file_index <= 0) {
+        printf("Invalid input or cancel was selected.\n");
         return -1; // Invalid number or "cancel"
     }
 
@@ -82,18 +89,24 @@ int receive_client_selection(char *selected_file) {
         return -1;
     }
 
+    printf("Looking for the selected file...\n");
+
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG) { // Only consider regular files
-            current_index++;
+            printf("Current file: %s (index %d)\n", entry->d_name, current_index); // Affiche chaque fichier trouvé
+
             if (current_index == file_index) {
                 strncpy(selected_file, entry->d_name, BUFFER_SIZE - 1);
                 selected_file[BUFFER_SIZE - 1] = '\0'; // Ensure null termination
                 closedir(dir);
+                printf("File selected: %s\n", selected_file); // Affiche le fichier sélectionné
                 return 1; // File found
             }
         }
+        current_index++;
     }
 
+    printf("File with index %d not found.\n", file_index); // Affiche si l'indice du fichier n'est pas trouvé
     closedir(dir);
     return -1; // File index not found
 }
@@ -102,6 +115,7 @@ int receive_client_selection(char *selected_file) {
 void send_file_to_client(int dSC, const char *file_name) {
     char file_path[BUFFER_SIZE];
     snprintf(file_path, BUFFER_SIZE, "%s/%s", DIRECTORY_PATH, file_name);
+    printf("Sending file: %s\n", file_path); // Debugging statement
 
     FILE *file = fopen(file_path, "rb");
     if (file == NULL) {
@@ -121,25 +135,13 @@ void send_file_to_client(int dSC, const char *file_name) {
     }
 
     fclose(file);
+    printf("File sent successfully or with errors.\n"); // Debugging statement
 }
 
 // Main thread function to handle file sending
-void* file_sending_thread(void* args) {
-    dS_sender = connect_socket(get_addr(), get_port()+1);
-
-    send_file_list();
-
-    char selected_file[BUFFER_SIZE];
-    int selection_status = receive_client_selection(selected_file);
-
-    if (selection_status == 1) {
-        send_file_to_client(dS_sender, selected_file);
-    } else if (selection_status == 0) {
-        printf("Client canceled the file transfer.\n");
-    } else {
-        printf("Invalid selection from client.\n");
-    }
-
-    close(dS_sender);
+void* file_sending_thread(void* arg) {
+    FileSendArgs* args = (FileSendArgs*) arg;
+    send_file_to_client(args->dS_sender, args->selected_file);  // Perform the file sending
+    free(args);  // Clean up the allocated memory
     pthread_exit(NULL);
 }

@@ -14,8 +14,10 @@
 #define DIRECTORY_PATH "./stocked_files" // Chemin du répertoire de stockage des fichiers
 #define BUFFER_SIZE 1024 // Taille du buffer utilisé pour la lecture/écriture des fichiers
 
-// Déclaration du descripteur de socket global
-extern int dS_sender;
+typedef struct {
+    int dS_sender;
+    char *selected_file;
+} FileSendArgs;
 
 // Prototype de la fonction pour envoyer la liste des fichiers disponibles au client
 void send_file_list(void);

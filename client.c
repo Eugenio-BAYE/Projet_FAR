@@ -22,12 +22,9 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
 
-  printf("test0")
   // Connect the socket
   signal(SIGINT, handle_sigint);
-  print("test1");
   set_dS(connect_socket(argv[1], atoi(argv[2])));
-  printf("test2");
   set_addr(argv[1]);
   set_port(atoi(argv[2]));
 

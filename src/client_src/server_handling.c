@@ -19,6 +19,8 @@
 #define msgLength 256
 int dS;
 int is_running = 1;
+int port;
+char *addr;
 
 int get_dS() {
     return dS;
@@ -42,31 +44,21 @@ void handle_sigint(int sig) {
   exit(1);
 }
 
-typedef struct {
-    int port;
-    char *addr;
-} NetworkConfig;
-
-// Getter pour le port
-int get_port(const NetworkConfig *config) {
-    return config->port;
+int get_port() {
+    return port;
 }
 
-// Setter pour le port
-void set_port(NetworkConfig *config, int port) {
-    config->port = port;
+void set_port(int p) {
+    port = p;
 }
 
-// Getter pour l'adresse
-const char* get_addr(const NetworkConfig *config) {
-    return config->addr;
+const char* get_addr() {
+    return addr;
 }
 
-// Setter pour l'adresse
-void set_addr(NetworkConfig *config, const char *addr) {
-    // Libérer la mémoire de l'ancienne adresse si nécessaire
-    free(config->addr);  // Assurez-vous que config->addr est initialisé à NULL ou alloué avant
-    config->addr = strdup(addr); // strdup copie la chaîne et alloue de la mémoire pour la nouvelle adresse
+void set_addr(const char *a) {
+    free(addr);  // Assurez-vous que config->addr est initialisé à NULL ou alloué avant
+    addr = strdup(a); // strdup copie la chaîne et alloue de la mémoire pour la nouvelle adresse
 }
 
 /* handle_local_sigint : Handles the SIGINT signal (Ctrl-C interruption) by shutting down the specified socket and exiting the program.

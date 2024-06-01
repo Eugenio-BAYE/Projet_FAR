@@ -49,7 +49,7 @@ void send_file_list() {
 int receive_client_selection(char *selected_file) {
     char buffer[1024]; // Reasonable size for user input
 
-    printf("Enter the number of the file to download or 'cancel' to abort: ");
+    printf("Enter the number of the file to download or 'cancel' to abort: \n"); // Newline char
     if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
         perror("Error reading input");
         return -1;
@@ -91,31 +91,64 @@ int receive_client_selection(char *selected_file) {
 
     printf("Looking for the selected file...\n");
 
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG) { // Only consider regular files
-            printf("Current file: %s (index %d)\n", entry->d_name, current_index); // Affiche chaque fichier trouvé
-
-            if (current_index == file_index) {
-                strncpy(selected_file, entry->d_name, BUFFER_SIZE - 1);
-                selected_file[BUFFER_SIZE - 1] = '\0'; // Ensure null termination
-                closedir(dir);
-                printf("File selected: %s\n", selected_file); // Affiche le fichier sélectionné
-                return 1; // File found
-            }
-        }
-        current_index++;
+  while ((entry = readdir(dir)) != NULL) {
+    if (entry->d_type == DT_REG) { // Only consider regular files
+      current_index++;
+      printf("Current file: %s (index %d)\n", entry->d_name, current_index); // Affiche chaque fichier trouvé
+      if (current_index == file_index) {
+        printf("Index found\n");
+        strncpy(selected_file, entry->d_name, BUFFER_SIZE);
+        printf("File selected: %s\n", selected_file); // Affiche le fichier sélectionné
+        closedir(dir);
+        return 1; // File found
+      }
     }
+  }
 
     printf("File with index %d not found.\n", file_index); // Affiche si l'indice du fichier n'est pas trouvé
     closedir(dir);
     return -1; // File index not found
 }
 
+int send_filename(int dS, char* buffer, size_t input_length) {
+    buffer[input_length - 1] = '\0';
+
+    int send_size = send(dS, &input_length, sizeof(size_t), 0);
+    if (send_size <= 0) {
+        if (send_size == 0) {
+            puts("Server disconnected when sending size");
+        } else {
+            perror("Error sending size");
+        }
+        free(buffer);
+        return -1;
+    }
+
+    int send_message = send(dS, buffer, input_length, 0);
+    if (send_message <= 0) {
+        if (send_message == 0) {
+            puts("Server disconnected when sending message");
+        } else {
+            perror("Error sending message");
+        }
+        free(buffer);
+        return -1;
+    }
+
+    return 0;
+}
+
 // Send the selected file to the client
-void send_file_to_client(int dSC, const char *file_name) {
+void send_file_to_client(int dSC, char *file_name) {
     char file_path[BUFFER_SIZE];
     snprintf(file_path, BUFFER_SIZE, "%s/%s", DIRECTORY_PATH, file_name);
     printf("Sending file: %s\n", file_path); // Debugging statement
+    size_t size_of_filename = strlen(file_name)+1;
+  printf("%ld\n", size_of_filename);
+
+  send_filename(dSC, file_name, size_of_filename);
+
+  printf("Filename sent successfully\n");
 
     FILE *file = fopen(file_path, "rb");
     if (file == NULL) {
@@ -141,7 +174,9 @@ void send_file_to_client(int dSC, const char *file_name) {
 // Main thread function to handle file sending
 void* file_sending_thread(void* arg) {
     FileSendArgs* args = (FileSendArgs*) arg;
-    send_file_to_client(args->dS_sender, args->selected_file);  // Perform the file sending
+    int dS_sender = args->dS_sender;
+    char* selected_file = args->selected_file;
+    send_file_to_client(dS_sender,selected_file);  // Perform the file sending
     free(args);  // Clean up the allocated memory
     pthread_exit(NULL);
 }

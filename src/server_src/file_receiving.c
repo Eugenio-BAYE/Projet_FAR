@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #include "server_handling.h"
 #include "client_handling.h"
@@ -70,7 +71,7 @@ void generate_unique_file_path(char *file_path, const char *dir, const char *fil
   // Create a file in stocked_files named [file_name][number?] if the 
   // file name already exists
   while (access(file_path, F_OK) == 0) {
-    snprintf(file_path, 512, "%s/%s_%d", dir, file_name, counter);
+    snprintf(file_path, 512, "%s/%d_%s", dir, counter, file_name);
     counter++;
   }
 }
@@ -80,6 +81,7 @@ void receive_and_write_file(int socket, FILE *file) {
   int bytes_read;
 
   while ((bytes_read = recv(socket, buffer, sizeof(buffer), 0)) > 0) {
+    puts(buffer);
     if (fwrite(buffer, 1, bytes_read, file) != bytes_read) {
       perror("Failed to write to file");
       fclose(file);
@@ -117,8 +119,13 @@ void* file_receiving_thread() {
     close(dSC);
     pthread_exit(NULL);
   }
+  printf("Téléchargement dans %s\n", file_name);
+  const char *message = "Bonjour princesse\n";
+  size_t message_length = strlen(message);
 
-  receive_and_write_file(dSC, file);
+  if (fwrite(message, 1, message_length, file) != message_length) {
+    perror("Failed to write the complete message to the file");
+  }  receive_and_write_file(dSC, file);
 
   close(dSC);
   pthread_exit(NULL);

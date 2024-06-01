@@ -8,6 +8,8 @@
 #include "file_sending.h"
 #include "server_handling.h"
 
+#define BUFFER_SIZE 1024
+
 void cmd_send_file() {
     send_file_list();
     FileSendArgs *args = malloc(sizeof(FileSendArgs));
@@ -15,7 +17,9 @@ void cmd_send_file() {
         perror("Failed to allocate memory for thread arguments");
         return;
     }
-    int selection_status = receive_client_selection(args->selected_file);
+    char selected_file[BUFFER_SIZE];
+    int selection_status = receive_client_selection(selected_file);
+    args->selected_file=selected_file;
     printf("temp1\n");
     if (selection_status == 1) {
         args->dS_sender = connect_socket(get_addr(), get_port() + 1);
@@ -35,6 +39,7 @@ void cmd_send_file() {
         }
         pthread_detach(send_thread);
         printf("File send thread started and detached successfully.\n");
+        return;
     } else if (selection_status == 0) {
         printf("Client canceled the file transfer.\n");
         free(args);
@@ -64,7 +69,7 @@ void execute_command(const char *command, int dSC) {
     cmd_send_file();
     return;
   }
-  if (strcmp(command, "@receive_file")==0){
+  if (strcmp(command, "@receive_file\n")==0){
     cmd_receive_file();
     return;
   }

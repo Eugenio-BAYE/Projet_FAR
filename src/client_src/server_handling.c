@@ -17,6 +17,7 @@
 
 
 #define msgLength 256
+
 int dS;
 int is_running = 1;
 int port;
@@ -100,7 +101,7 @@ int connect_socket(const char * arg1, int arg2 ){
     return dS;
 }
 
-int receive_memset(int dSC, char msg[], int msgLength){
+int receive_memset(int dSC, char msg[], int msgLenght){
   memset(msg, '\0', msgLength); // Initialize the buffer with null characters
   int received_size = recv(dSC, msg, msgLength, 0); // Receive data from the socket
   return received_size; // Return the number of bytes received

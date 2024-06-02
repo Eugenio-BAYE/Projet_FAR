@@ -164,3 +164,114 @@ void cmd_receive_file(int dSC){
 
 }
 
+void cmd_kick(int dSC, const char* command){
+  char *command_copy = strdup(command);
+  if (command_copy == NULL) {
+      fprintf(stderr, "Memory allocation failed\n");
+      return;
+  }
+
+  char *cmd = strtok(command_copy, " ");
+  if (cmd == NULL) {
+      fprintf(stderr, "Failed to parse command\n");
+      free(command_copy);
+      return;
+  }
+
+  char *username = strtok(NULL, "");
+  if (username == NULL) {
+      fprintf(stderr, "Failed to parse username\n");
+      free(command_copy);
+      return;
+  }
+  printf("copycommand:%s\n",command_copy);
+  printf("commande : %s\n",cmd);
+  printf("username : %s\n",username);
+
+  char dSK = find_client_by_username(username);
+
+  if (dSK == -1){
+    send_msg(dSC, "Username to kick not found\n");
+  }
+  else{
+    send_msg(dSK, "You have been successfully kicked\n");
+    remove_client(dSK);
+    send_msg(dSC, "User kick with success\n");
+  }
+  free(command_copy);
+}
+
+void cmd_create_channel(int dSC, char *command) {
+    // Check for the starting quote of the channel name
+    char *start = command + 16;
+    if (*start != '"') {
+        send_msg(dSC, "Wrong syntax for creating channel");
+        return;
+    }
+
+    // Find the ending quote of the channel name
+    char *end = strchr(start + 1, '"');
+    if (!end) {
+        send_msg(dSC, "Wrong syntax for creating channel");
+        return;
+    }
+
+    // Extract the channel name
+    *end = '\0';
+    char *channel_name = start + 1;
+
+    // Move to the space after the channel name
+    start = end + 1;
+    if (*start != ' ') {
+        send_msg(dSC, "Wrong syntax for creating channel");
+        return;
+    }
+    start++;
+
+    // Check for the starting quote of the description
+    if (*start != '"') {
+        send_msg(dSC, "Wrong syntax for creating channel");
+        return;
+    }
+
+    // Find the ending quote of the description
+    end = strchr(start + 1, '"');
+    if (!end) {
+        send_msg(dSC, "Wrong syntax for creating channel");
+        return;
+    }
+
+    // Extract the description
+    *end = '\0';
+    char *description = start + 1;
+
+    // Create the channel
+    if (create_channel(channel_name, description) == 0) {
+        send_msg(dSC, "Channel created successfully");
+        printf("Channel %s created successfully.\n", channel_name);
+    } else {
+        send_msg(dSC, "Failed to create channel. Too many channels");
+        printf("Failed to create channel %s. Too many channels\n", channel_name);
+    }
+}
+
+
+void cmd_join_channel(int dSC, char* command){
+  char *channel_name = command + 14;
+  join_channel(dSC, channel_name);
+}
+
+void cmd_list_channels(int dSC){
+  printf("Entered cmd list channels\n");
+    send_msg(dSC, "Availables channels : ");
+    list_channels(dSC);
+}
+
+void cmd_leave_channel(int dSC) {
+    char username[21];
+    find_client_username(dSC, username);
+    remove_client_from_current_channel(dSC);
+    send_msg(dSC, "Moved to general channel");
+}
+
+

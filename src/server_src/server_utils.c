@@ -36,7 +36,7 @@ int is_a_command(const char *msg) {
   return 0;
 }
 
-void execute_command(const char *command, int dSC, sem_t semaphore) {
+void execute_command(char *command, int dSC, sem_t semaphore) {
   if (command == NULL){
     perror("Can't execute_command() on empty command");
   }
@@ -91,9 +91,32 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
     cmd_receive_file(dSC);
     return;
   }
-    if (strncmp(command, "@choose", 7) == 0) {
+  if (strncmp(command, "@kick ", 6) == 0) {
+    cmd_kick(dSC, command);
     return;
   }
+  if (strncmp(command, "@choose", 7) == 0) {
+    return;
+  }
+  if (strncmp(command, "@create_channel ", 16) == 0) {
+    cmd_create_channel(dSC, command);
+    return;
+  }
+  if (strncmp(command, "@join_channel ", 14) == 0) {
+    // /!\ 13 + 1 Pour arriver à @
+    cmd_join_channel(dSC, command);
+    return;
+  }
+  if (strncmp(command, "@list_channels", 14) == 0) {
+    cmd_list_channels(dSC);
+    return;
+  }
+  if (strncmp(command, "@leave_channel", 14) == 0) {
+    cmd_leave_channel(dSC);
+    return;
+  }
+
+
   send_msg(dSC,"Unknown command \nCheck man for more info\0");
 }
 

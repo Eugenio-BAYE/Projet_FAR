@@ -19,3 +19,13 @@ shutdown: This command shuts down the server.
 receive_file : This command ask the client to choose a file from the server to download.
 
 send_file : This command ask the client a file to upload to the server.
+
+kick : This command kick a specific user. The command should be followed by the username of the user that will be kick. For example: kick username.
+
+create_channel "<channelname>" "<channeldesc>" : Create a channel name <channelname>.
+
+join_channel <channelname> : Join the channel name channelname and leave current channel.
+
+list_channels : Display a list of current channels with its name, description and number of users.
+
+leave_channel : Move to general channel.

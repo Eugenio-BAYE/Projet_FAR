@@ -1,46 +1,82 @@
 #ifndef FILE_SENDING_H
 #define FILE_SENDING_H
 
-#include <stdio.h> // Pour FILE, printf, fopen, etc.
-#include <stdlib.h> // Pour malloc et autres fonctions de gestion de la mémoire
-#include <string.h> // Pour strncpy et autres fonctions de manipulation des chaînes
-#include <sys/socket.h> // Pour les fonctions de socket
-#include <sys/types.h> // Types de données utilisés par les fonctions de système
-#include <sys/stat.h> // Pour mkdir
-#include <unistd.h> // Pour close
-#include <dirent.h> // Pour les opérations sur les répertoires
-#include "server_handling.h" // Pour les prototypes de connect_socket, etc.
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
+#include "server_handling.h"
 
-#define DIRECTORY_PATH "./stocked_files" // Chemin du répertoire de stockage des fichiers
-#define BUFFER_SIZE 1024 // Taille du buffer utilisé pour la lecture/écriture des fichiers
+#define DIRECTORY_PATH "./stocked_files"
+#define BUFFER_SIZE 1024
 
 typedef struct {
     int dS_sender;
     char *selected_file;
 } FileSendArgs;
 
-// Prototype de la fonction pour envoyer la liste des fichiers disponibles au client
+/**
+ * @brief Sends the list of available files to the client.
+ */
 void send_file_list(void);
 
-// Prototype de la fonction pour recevoir la sélection du client
+/**
+ * @brief Receives the client's file selection.
+ * 
+ * @param selected_file Pointer to store the selected file name.
+ * @return Returns 0 if the client cancels, 1 if the selection is successful, -1 on failure.
+ */
 int receive_client_selection(char *selected_file);
 
-// Prototype de la fonction pour générer un chemin de fichier unique
+/**
+ * @brief Generates a unique file path.
+ * 
+ * @param file_path Pointer to store the generated file path.
+ * @param dir Directory where the file is stored.
+ * @param file_name Name of the file.
+ */
 void generate_unique_file_path(char *file_path, const char *dir, const char *file_name);
 
-// Prototype de la fonction pour envoyer le fichier sélectionné au client
+/**
+ * @brief Sends the selected file to the client.
+ * 
+ * @param dSC Socket descriptor of the client connection.
+ * @param file_name Name of the file to send.
+ */
 void send_file_to_client(int dSC, const char *file_name);
 
-// Prototype de la fonction pour créer un répertoire s'il n'existe pas
+/**
+ * @brief Creates a directory if it does not exist.
+ * 
+ * @param path Path of the directory to create.
+ */
 void create_directory_if_not_exists(const char *path);
 
-// Prototype de la fonction pour recevoir un nom de fichier d'un socket
+/**
+ * @brief Receives a file name from a socket.
+ * 
+ * @param socket Socket descriptor from which to receive the file name.
+ * @return Returns the received file name.
+ */
 char* receive_file_name(int socket);
 
-// Prototype de la fonction pour recevoir et écrire le fichier
+/**
+ * @brief Receives and writes the file contents.
+ * 
+ * @param socket Socket descriptor from which to receive the file.
+ * @param file Pointer to the file to write the contents.
+ */
 void receive_and_write_file(int socket, FILE *file);
 
-// Prototype de la fonction thread principale pour gérer l'envoi de fichiers
+/**
+ * @brief Main thread function to handle file sending.
+ * 
+ * @param args Arguments for the file sending thread.
+ */
 void* file_sending_thread(void* args);
 
-#endif // FILE_SENDING_H
+#endif

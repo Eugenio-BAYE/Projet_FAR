@@ -61,14 +61,16 @@ void cmd_receive_file(){
 }
 
 void execute_command(const char *command, int dSC) {
+  //check if the command @send_file is call
   if (strcmp(command, "@send_file\n")==0){
     cmd_send_file();
     return;
   }
+
+  //check if the command @receive_file is call
   if (strcmp(command, "@receive_file\n")==0){
     break_input();
     cmd_receive_file();
     return;
   }
-
 }

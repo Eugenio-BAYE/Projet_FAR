@@ -164,6 +164,42 @@ void cmd_receive_file(int dSC){
 
 }
 
+void cmd_kick(int dSC, const char* command){
+  char *command_copy = strdup(command);
+  if (command_copy == NULL) {
+      fprintf(stderr, "Memory allocation failed\n");
+      return;
+  }
+
+  char *cmd = strtok(command_copy, " ");
+  if (cmd == NULL) {
+      fprintf(stderr, "Failed to parse command\n");
+      free(command_copy);
+      return;
+  }
+
+  char *username = strtok(NULL, "");
+  if (username == NULL) {
+      fprintf(stderr, "Failed to parse username\n");
+      free(command_copy);
+      return;
+  }
+  printf("copycommand:%s\n",command_copy);
+  printf("commande : %s\n",cmd);
+  printf("username : %s\n",username);
+
+  char dSK = find_client_by_username(username);
+
+  if (dSK == -1){
+    send_msg(dSC, "Username to kick not found\n");
+  }
+  else{
+    send_msg(dSK, "You have been successfully kicked\n");
+    remove_client(dSK);
+    send_msg(dSC, "User kick with success\n");
+  }
+  free(command_copy);
+}
 
 void cmd_create_channel(int dSC, char *command) {
     // Check for the starting quote of the channel name

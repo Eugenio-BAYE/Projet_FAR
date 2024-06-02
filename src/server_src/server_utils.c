@@ -91,6 +91,10 @@ void execute_command(char *command, int dSC, sem_t semaphore) {
     cmd_receive_file(dSC);
     return;
   }
+  if (strncmp(command, "@kick ", 6) == 0) {
+    cmd_kick(dSC, command);
+    return;
+  }
   if (strncmp(command, "@choose", 7) == 0) {
     return;
   }

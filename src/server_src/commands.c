@@ -178,14 +178,15 @@ void cmd_kick(int dSC, const char* command){
       return;
   }
 
-  char *username = strtok(NULL, " ");
+  char *username = strtok(NULL, "");
   if (username == NULL) {
       fprintf(stderr, "Failed to parse username\n");
       free(command_copy);
       return;
   }
-  free(command_copy);
-  free(cmd);
+  printf("copycommand:%s\n",command_copy);
+  printf("commande : %s\n",cmd);
+  printf("username : %s\n",username);
 
   char dSK = find_client_by_username(username);
 
@@ -193,8 +194,9 @@ void cmd_kick(int dSC, const char* command){
     send_msg(dSC, "Username to kick not found\n");
   }
   else{
+    send_msg(dSK, "You have been successfully kicked\n");
     remove_client(dSK);
     send_msg(dSC, "User kick with success\n");
   }
-  free(username);
+  free(command_copy);
 }

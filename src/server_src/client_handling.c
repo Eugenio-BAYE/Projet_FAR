@@ -54,7 +54,7 @@ int formated_msg_size(int dSC, int msg_size){
 }
 
 void format_msg(char msg[], int dSC, int size, char formated_msg[]){
-  censor_text_from_file(msg, "censored_words.txt");
+  censor_text_from_file(msg, "src/server_src/censored_words.txt");
   memset(formated_msg, '\0', size);
   for(int i=0; i<MAX_CLIENT; i++){
     if(clients[i].dSC==dSC){

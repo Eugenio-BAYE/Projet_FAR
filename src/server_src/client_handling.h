@@ -6,6 +6,11 @@
 
 #endif // !CLIENT_HANDLING_H
 
+
+
+void list_channels(int dSC); 
+int join_channel(int dSC,char *channel_name);
+int create_channel(const char *channel_name, const char *description); 
 void find_client_username(int dSC, char username[]);
 int find_client_by_username(const char *username);
 int get_nbr_of_clients();
@@ -14,6 +19,9 @@ void free_client_list();
 void add_new_client(int dSC);
 int can_accept_new_client(sem_t *semaphore);
 sem_t new_semaphore();
+
+
+void remove_client_from_current_channel(int dSC);
 
 void remove_client(int dSC);
 /* is_username_valid : Checks if username can be used

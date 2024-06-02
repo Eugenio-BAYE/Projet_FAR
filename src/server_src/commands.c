@@ -3,9 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <semaphore.h>
+#include <pthread.h>
 
 #include "client_handling.h"
 #include "../../server.h"
+#include "file_receiving.h"
+#include "file_sending.h"
 
 void cmd_random(int dSC) {
   int random = rand() %1000;
@@ -103,7 +106,7 @@ void cmd_shutdown(int dSC){
 
 void cmd_quit(int dSC, sem_t semaphore){
   send_msg(dSC, "Disconnecting from server...\n");
-  remove_client(dSC, semaphore);
+  remove_client(dSC);
 }
 
 
@@ -121,3 +124,43 @@ void cmd_man(int dSC){
 
   fclose(file);
 }
+
+void cmd_send_file() {
+  printf("cmd_file_send\n");
+  pthread_t file_thread;
+
+  if (pthread_create(&file_thread, NULL, file_receiving_thread, NULL) != 0) {
+
+    perror("Failed to create file handling thread");
+    return;
+  }
+
+  if (pthread_detach(file_thread) != 0) {
+    perror("Failed to detach file handling thread");
+    return;
+  }
+}
+
+void cmd_receive_file(int dSC){
+  printf("cmd_file_receive\n");
+  pthread_t file_thread;
+
+  struct handle_client_args{
+    int normal_dSC;
+  };
+
+
+    struct handle_client_args arg = {dSC};
+
+  if (pthread_create(&file_thread, NULL, file_sending_thread, (void*)&arg) != 0) {
+    perror("Failed to create file sending thread");
+    return;
+  }
+
+  if (pthread_detach(file_thread) != 0) {
+    perror("Failed to detach file sending thread");
+    return;
+  }
+
+}
+

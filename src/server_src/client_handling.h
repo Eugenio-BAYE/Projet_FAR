@@ -15,7 +15,7 @@ void add_new_client(int dSC);
 int can_accept_new_client(sem_t *semaphore);
 sem_t new_semaphore();
 
-void remove_client(int dSC, sem_t semaphore);
+void remove_client(int dSC);
 /* is_username_valid : Checks if username can be used
  * Parameters : char username[] 
  * Returns :  1 if it can be taken (SUCESS)
@@ -23,7 +23,7 @@ void remove_client(int dSC, sem_t semaphore);
  *            3 if it is aldready taken (FAILURE)
  */
 int is_username_valid(char username[]);
-int ask_username(int dSC, sem_t semaphore);
+int ask_username(int dSC);
 void update_username(int dSC, char username[]);
 
 int formated_msg_size(int dSC, int msg_size);

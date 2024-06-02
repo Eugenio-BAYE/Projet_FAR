@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+#include "semaphore.h"
 #include "server_utils.h"
 
 #define MAX_CLIENT 10
@@ -88,7 +89,7 @@ void update_username(int dSC, char username[]){
   }
 }
 
-int ask_username(int dSC, sem_t semaphore) {
+int ask_username(int dSC) {
   int is_valid = 0;
   char username[21];
   memset(username, '\0', 21);
@@ -97,7 +98,7 @@ int ask_username(int dSC, sem_t semaphore) {
     send_msg(dSC, message);
     size_t input_length;
     if (recv(dSC, &input_length, sizeof(input_length), 0)==0){
-      remove_client(dSC, semaphore);
+      remove_client(dSC);
       return 0;
     }
     char *input = malloc(input_length);
@@ -150,14 +151,6 @@ int can_accept_new_client(sem_t *semaphore) {
     return 0;  // Return 0 on success
 }
 
-sem_t new_semaphore() {
-    sem_t semaphore;
-    if (sem_init(&semaphore, 0, MAX_CLIENT) != 0) {
-        perror("Error initializing semaphore");
-        exit(EXIT_FAILURE);  // Exit if semaphore initialization fails
-    }
-    return semaphore;
-}
 
 void add_new_client(int dSC){
   nbr_of_clients++;
@@ -184,7 +177,7 @@ void broadcast_message(int sender, char *message, size_t message_size) {
   pthread_mutex_unlock(&mutex);
 }
 
-void remove_client(int dSC, sem_t semaphore){
+void remove_client(int dSC){
   pthread_mutex_lock(&mutex);
   for (int i = 0; i < MAX_CLIENT; i++) {
     if (clients[i].dSC == dSC) {
@@ -194,7 +187,7 @@ void remove_client(int dSC, sem_t semaphore){
     }
   }
   pthread_mutex_unlock(&mutex);
-  sem_post(&semaphore);
+  sem_post(get_semaphore());
   nbr_of_clients--;
   close(dSC);
   printf("Client disconnected\n");

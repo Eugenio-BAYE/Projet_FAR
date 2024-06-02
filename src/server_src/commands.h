@@ -34,10 +34,14 @@ void cmd_dascalu(int dSC);
 
 void cmd_msg(int dSC, const char *command);
 
-void cmd_quit(int dSC ,sem_t semaphore);
+void cmd_quit(int dSC);
 
 void cmd_shutdown(int dSC);
 
 void cmd_man(int dSC);
+
+void cmd_send_file(int dSC);
+
+void cmd_receive_file(int dSC);
 
 #endif

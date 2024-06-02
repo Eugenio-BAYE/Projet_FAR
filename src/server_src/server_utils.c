@@ -6,7 +6,7 @@
 
 #include "commands.h"
 
-void send_msg(int dSC, char *msg) {
+void send_msg(int dSC, const char *msg) {
   // Calculate the size of the message
   size_t msg_size = strlen(msg) + 1;
 
@@ -14,7 +14,7 @@ void send_msg(int dSC, char *msg) {
   memcpy(new_msg, msg, msg_size);
   new_msg[msg_size - 1] = '\0';
   // Send the size of te message to the client
-  ssize_t bytes_sent = send(dSC, &msg_size, sizeof(size_t), 0);
+  int bytes_sent = send(dSC, &msg_size, sizeof(size_t), 0);
   if (bytes_sent == -1) {
     perror("Error sending message size to client");
   }
@@ -66,7 +66,7 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
     return;
   }
   if (strcmp(command, "@quit\0")==0){
-    cmd_quit(dSC, semaphore);
+    cmd_quit(dSC);
     return;
   }
   if (strcmp(command, "@shutdown\0")==0){
@@ -75,6 +75,23 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
   }
   if (strcmp(command, "@man\0")==0){
     cmd_man(dSC);
+    return;
+  }
+  if (strcmp(command, "@send_file\0")==0){
+    //*********|WARNING|************/
+    // Here it's the "@send_file" command handling so the
+    // server is actually RECEIVING the file to the client
+    cmd_send_file(dSC);
+    return;
+  }
+  if (strcmp(command, "@receive_file\0")==0){
+    //*********|WARNING|************/
+    // Here it's the "@receive_file" command handling so the
+    // server is actually SENDING the file to the client
+    cmd_receive_file(dSC);
+    return;
+  }
+    if (strncmp(command, "@choose", 7) == 0) {
     return;
   }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");

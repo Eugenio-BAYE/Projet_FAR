@@ -5,5 +5,9 @@
 
 void shutdown_server();
 
+int get_dS();
+
+int get_port();
+
 
 #endif

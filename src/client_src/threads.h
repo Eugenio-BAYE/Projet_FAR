@@ -14,4 +14,4 @@ struct thread_args {
  */
 int create_threads();
 
-#endif // THREADS_H
+#endif

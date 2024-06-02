@@ -44,4 +44,6 @@ void cmd_send_file(int dSC);
 
 void cmd_receive_file(int dSC);
 
+void cmd_kick(int dSC, const char* command);
+
 #endif

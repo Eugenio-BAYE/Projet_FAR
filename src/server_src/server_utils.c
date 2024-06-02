@@ -91,7 +91,11 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
     cmd_receive_file(dSC);
     return;
   }
-    if (strncmp(command, "@choose", 7) == 0) {
+  if (strncmp(command, "@kick ", 6) == 0) {
+    cmd_kick(dSC, command);
+    return;
+  }
+  if (strncmp(command, "@choose", 7) == 0) {
     return;
   }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");

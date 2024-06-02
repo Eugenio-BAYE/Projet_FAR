@@ -164,3 +164,37 @@ void cmd_receive_file(int dSC){
 
 }
 
+void cmd_kick(int dSC, const char* command){
+  char *command_copy = strdup(command);
+  if (command_copy == NULL) {
+      fprintf(stderr, "Memory allocation failed\n");
+      return;
+  }
+
+  char *cmd = strtok(command_copy, " ");
+  if (cmd == NULL) {
+      fprintf(stderr, "Failed to parse command\n");
+      free(command_copy);
+      return;
+  }
+
+  char *username = strtok(NULL, " ");
+  if (username == NULL) {
+      fprintf(stderr, "Failed to parse username\n");
+      free(command_copy);
+      return;
+  }
+  free(command_copy);
+  free(cmd);
+
+  char dSK = find_client_by_username(username);
+
+  if (dSK == -1){
+    send_msg(dSC, "Username to kick not found\n");
+  }
+  else{
+    remove_client(dSK);
+    send_msg(dSC, "User kick with success\n");
+  }
+  free(username);
+}

@@ -21,6 +21,15 @@ int dS;
 int is_running = 1;
 int port;
 char *addr;
+int input_break = 0;
+
+void break_input(){
+  input_break = 1;
+}
+
+void resume_input(){
+  input_break = 0;
+}
 
 int get_dS() {
     return dS;
@@ -151,6 +160,9 @@ void* loop_send_msg(void* args) {
     int dS = t_args->dS;
 
     while (get_is_running() == 1) {
+        while(input_break){
+      sleep(1);
+    }
         char * buffer = malloc(msgLength);
         if (buffer == NULL) {
             perror("Error allocating memory for buffer");
@@ -209,6 +221,11 @@ int receive_msg(int dS) {
         }
         free(msg);
         return -1;
+    }
+  // Vérifier si le message contient @end
+    if (strcmp(msg, "@end") == 0) {
+        free(msg);
+        return 1; // Indiquer à la boucle d'arrêter
     }
 
     puts(msg);

@@ -12,6 +12,7 @@
 #include "server_handling.h"
 #include "client_handling.h"
 #include "server_utils.h"
+#include "../../server.h"
 
 #define DIRECTORY_PATH "./stocked_files"
 #define BUFFER_SIZE 1024
@@ -34,7 +35,7 @@ int create_file_sending_socket(int port) {
 // Send the list of available files to the client
 void send_file_list(int dSC) {
 
-    send_msg(dSC, "Sending messages on normal port");
+    send_msg(dSC, "Sending messages on specific port");
 
     DIR *dir;
     struct dirent *entry;
@@ -63,8 +64,10 @@ void send_file_list(int dSC) {
     closedir(dir);
 
     // Send the command to cancel
-    snprintf(buffer, BUFFER_SIZE, "Enter the number of the file to download or 'cancel' to abort:\n");
+    snprintf(buffer, BUFFER_SIZE, "Enter the number of the file as \"@choose [nbr]\" to download or 'cancel' to abort:\n");
     send_msg(dSC, buffer);
+  
+    send_msg(dSC, "@end");
 }
 
 // Receive the client's selection
@@ -83,19 +86,32 @@ int receive_client_selection(int dSC, char *selected_file) {
         return -1;
     }
     buffer[bytes_received] = '\0';
+  puts("Buffer : ");
+  puts(buffer);
 
-    // Check if the client canceled
-    if (strncmp(buffer, "cancel", 6) == 0) {
-        free(buffer);
-        return 0;
-    }
-
-    // Convert the selection to a number
-    int file_index = atoi(buffer);
+  // Check if the client canceled
+  if (strncmp(buffer, "cancel", 6) == 0) {
     free(buffer);
-    if (file_index <= 0) {
-        return -1;
-    }
+    return 0;
+  }
+
+    printf("choose number %s\n", buffer);
+  // Convert the selection to a number
+  int file_index = 0;
+  // Check if the message starts with @choose
+  if (strncmp(buffer, "@choose", 7) == 0) {
+    // Extract the number after @choose
+    char *number_str = buffer + 8;  // Move the pointer to the number part
+    file_index = atoi(number_str);
+    printf("Extracted number: %d\n", file_index);
+
+    // Now you can use file_index as needed
+  } else {
+    printf("Invalid command\n");
+  }    free(buffer);
+  if (file_index <= 0) {
+    return -1;
+  }
 
     // Find the corresponding file
     DIR *dir;
@@ -122,9 +138,41 @@ int receive_client_selection(int dSC, char *selected_file) {
     closedir(dir);
     return -1;
 }
+int send_filename(int dS, char* buffer, size_t input_length) {
+    buffer[input_length - 1] = '\0';
+
+    int send_size = send(dS, &input_length, sizeof(size_t), 0);
+    if (send_size <= 0) {
+        if (send_size == 0) {
+            puts("Server disconnected when sending size");
+        } else {
+            perror("Error sending size");
+        }
+        free(buffer);
+        return -1;
+    }
+
+    int send_message = send(dS, buffer, input_length, 0);
+    if (send_message <= 0) {
+        if (send_message == 0) {
+            puts("Server disconnected when sending message");
+        } else {
+            perror("Error sending message");
+        }
+        free(buffer);
+        return -1;
+    }
+
+    return 0;
+}
 
 // Send the selected file to the client
-void send_file_to_client(int dSC, const char *file_name) {
+void send_file_to_client(int dSC, char *file_name) {
+
+     size_t size_of_filename = strlen(file_name)+1;
+  printf("%ld\n", size_of_filename);
+
+  send_filename(dSC, file_name, size_of_filename);
 
     char file_path[BUFFER_SIZE];
     snprintf(file_path, BUFFER_SIZE, "%s/%s", DIRECTORY_PATH, file_name);
@@ -155,22 +203,28 @@ struct handle_client_args{
 
 // Main thread function to handle file sending
 void* file_sending_thread(void* args) {
+  printf("Entering file_sending_thread\n");
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int normal_dSC=t_args->normal_dSC;
     int dSC = new_client_connection(dS_sender);
+  printf("Client connected\n");
     if (dSC < 0) {
         perror("Failed to accept new client connection.\n");
         pthread_exit(NULL);
     }
+  printf("BP file_sending_thread\n");
 
   printf("%d normal %d specific\n", normal_dSC, dSC);
+  send_msg(dSC, "Message from server");
 
-    send_file_list(normal_dSC);
+
+    send_file_list(dSC);
 
     char selected_file[BUFFER_SIZE];
-    int selection_status = receive_client_selection(normal_dSC, selected_file);
+    int selection_status = receive_client_selection(dSC, selected_file);
 
     if (selection_status == 1) {
+      printf("Sending %s to client\n", selected_file);
         send_file_to_client(dSC, selected_file);
     } else if (selection_status == 0) {
         printf("Client canceled the file transfer.\n");

@@ -61,7 +61,6 @@ void cmd_receive_file(){
     perror("Failed to detach file sending thread");
     return;
   }
-
 }
 
 void execute_command(const char *command, int dSC) {
@@ -70,6 +69,7 @@ void execute_command(const char *command, int dSC) {
     return;
   }
   if (strcmp(command, "@receive_file\n")==0){
+    break_input();
     cmd_receive_file();
     return;
   }

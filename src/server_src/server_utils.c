@@ -6,7 +6,7 @@
 
 #include "commands.h"
 
-void send_msg(int dSC, char *msg) {
+void send_msg(int dSC, const char *msg) {
   // Calculate the size of the message
   size_t msg_size = strlen(msg) + 1;
 
@@ -14,7 +14,7 @@ void send_msg(int dSC, char *msg) {
   memcpy(new_msg, msg, msg_size);
   new_msg[msg_size - 1] = '\0';
   // Send the size of te message to the client
-  ssize_t bytes_sent = send(dSC, &msg_size, sizeof(size_t), 0);
+  int bytes_sent = send(dSC, &msg_size, sizeof(size_t), 0);
   if (bytes_sent == -1) {
     perror("Error sending message size to client");
   }
@@ -89,6 +89,9 @@ void execute_command(const char *command, int dSC, sem_t semaphore) {
     // Here it's the "@receive_file" command handling so the
     // server is actually SENDING the file to the client
     cmd_receive_file(dSC);
+    return;
+  }
+    if (strncmp(command, "@choose", 7) == 0) {
     return;
   }
   send_msg(dSC,"Unknown command \nCheck man for more info\0");

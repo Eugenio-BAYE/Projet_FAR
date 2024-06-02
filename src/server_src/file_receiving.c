@@ -79,9 +79,21 @@ void generate_unique_file_path(char *file_path, const char *dir, const char *fil
 void receive_and_write_file(int socket, FILE *file) {
   char buffer[1024];
   int bytes_read;
+  size_t sizeof_file = -1;
 
-  while ((bytes_read = recv(socket, buffer, sizeof(buffer), 0)) > 0) {
+  // Recevoir la taille du fichier
+    size_t file_size = -1;
+    if (recv(socket, &file_size, sizeof(file_size), 0) != sizeof(file_size)) {
+        perror("Failed to receive file size");
+        return;
+    }
+
+    printf("File size: %ld\n", file_size);
+  int size_so_far = 0;
+
+  while ((bytes_read = recv(socket, buffer, sizeof(buffer), 0)) > 0 && size_so_far < file_size) {
     puts(buffer);
+    size_so_far += bytes_read;
     if (fwrite(buffer, 1, bytes_read, file) != bytes_read) {
       perror("Failed to write to file");
       fclose(file);
@@ -125,8 +137,9 @@ void* file_receiving_thread() {
 
   if (fwrite(message, 1, message_length, file) != message_length) {
     perror("Failed to write the complete message to the file");
-  }  receive_and_write_file(dSC, file);
-
+  } 
+  receive_and_write_file(dSC, file);
+  printf("End Receiving\n");
   close(dSC);
   pthread_exit(NULL);
 }

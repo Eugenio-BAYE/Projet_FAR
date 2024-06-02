@@ -1,2 +1,2 @@
-Bonjour princesseTest Input
+Test Input
 Test

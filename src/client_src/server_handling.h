@@ -21,6 +21,9 @@ extern int is_running;
 extern int port;
 extern char *addr;
 
+void break_input();
+void resume_input();
+
 int get_port();
 void set_port(int port);
 const char* get_addr();

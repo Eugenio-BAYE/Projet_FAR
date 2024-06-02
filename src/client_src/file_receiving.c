@@ -55,7 +55,7 @@ void generate_unique_file_path(char *file_path, const char *dir, const char *fil
   // Create a file in stocked_files named [file_name][number?] if the 
   // file name already exists
   while (access(file_path, F_OK) == 0) {
-    snprintf(file_path, 512, "%s/%s_%d", dir, file_name, counter);
+    snprintf(file_path, 512, "%s/%d_%s", dir, counter, file_name);
     counter++;
   }
 }
@@ -80,21 +80,29 @@ void receive_and_write_file(int socket, FILE *file) {
   fclose(file);
 }
 
-void* file_receiving_thread(void *arg) {
-  dS_receiver = connect_socket(get_addr(), get_port()+1);
 
-  char input_buffer[32]; // Buffer to hold input string
-  if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL) {
+
+void* file_receiving_thread(void *arg) {
+  dS_receiver = connect_socket(get_addr(), get_port()-1);
+
+  char * input_buffer= malloc(64);
+  while (receive_msg(dS_receiver)!=1){
+  }
+  if (fgets(input_buffer, 64, stdin) == NULL) {
     perror("Failed to read input");
     close(dS_receiver);
     pthread_exit(NULL);
   }
+  puts(input_buffer);
+  resume_input();
 
   // Send the integer as a string to the server
-  if (send_msg(dS_receiver, input_buffer, strlen(input_buffer) + 1) == -1) { 
-    close(dS_receiver);
+  printf("Sending message\n");
+  if (send_msg(dS_receiver, input_buffer, strlen(input_buffer) + 3) == -1) { 
+    //close(dS_receiver);
     pthread_exit(NULL);
   }
+  printf("Message sent \n");
 
   // Following the original task
   char *file_name = receive_file_name(dS_receiver);

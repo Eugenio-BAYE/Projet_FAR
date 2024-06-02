@@ -150,25 +150,37 @@ void send_file_to_client(int dSC, char *file_name) {
 
   printf("Filename sent successfully\n");
 
+
+
     FILE *file = fopen(file_path, "rb");
     if (file == NULL) {
         perror("Failed to open file");
         return;
     }
 
-    char buffer[BUFFER_SIZE];
-    size_t bytes_read;
+  char buffer[BUFFER_SIZE];
+  size_t bytes_read = -1;
+  // Get the size of the file
+  fseek(file, 0, SEEK_END);
+  size_t file_size = ftell(file);
+  fseek(file, 0, SEEK_SET);
 
-    // Send the file in chunks
-    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
-        if (send(dSC, buffer, bytes_read, 0) != bytes_read) {
-            perror("Failed to send file");
-            break;
-        }
-    }
-
+  // Send the size of the file
+  if (send(dSC, &file_size, sizeof(file_size), 0) != sizeof(file_size)) {
+    perror("Failed to send file size");
     fclose(file);
-    printf("File sent successfully or with errors.\n"); // Debugging statement
+    return;
+  }
+  // Send the file in chunks
+  while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
+    if (send(dSC, buffer, bytes_read, 0) != bytes_read) {
+      perror("Failed to send file");
+      break;
+    }
+  }
+
+  fclose(file);
+  printf("File sent successfully or with errors.\n"); // Debugging statement
 }
 
 // Main thread function to handle file sending

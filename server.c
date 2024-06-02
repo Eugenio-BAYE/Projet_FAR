@@ -135,6 +135,7 @@ int main(int argc, char *argv[]) {
       perror("Failed to accept new client connection.\n");
       return 1;
     }
+    printf("Normal : %d\n", dSC);
 
     pthread_t thread;
 

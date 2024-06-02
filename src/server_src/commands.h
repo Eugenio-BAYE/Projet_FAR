@@ -44,4 +44,10 @@ void cmd_send_file(int dSC);
 
 void cmd_receive_file(int dSC);
 
+void cmd_create_channel(int dSC, char* command);
+
+void cmd_join_channel(int dSC, char* command);
+
+void cmd_list_channels(int dSC);
+
 #endif

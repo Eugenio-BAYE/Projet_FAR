@@ -6,6 +6,11 @@
 
 #endif // !CLIENT_HANDLING_H
 
+
+
+void list_channels(int dSC); 
+int join_channel(int dSC,char *channel_name);
+int create_channel(const char *channel_name, const char *description); 
 void find_client_username(int dSC, char username[]);
 int find_client_by_username(const char *username);
 int get_nbr_of_clients();

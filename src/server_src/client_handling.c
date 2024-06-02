@@ -12,17 +12,81 @@
 #include "server_utils.h"
 
 #define MAX_CLIENT 10
+#define MAX_CHANNELS 10
+#define CHANNEL_DESCRIPTION_LENGTH 128
+#define CHANNEL_NAME_LENGTH 20
+#define BUFFER_SIZE 1024
+
+typedef struct {
+    char name[CHANNEL_NAME_LENGTH];
+    char description[CHANNEL_DESCRIPTION_LENGTH];
+    int client_count;
+} Channel;
 
 typedef struct {
     int dSC;
     char username[21];
     int username_lenght;
+    char channel[CHANNEL_NAME_LENGTH];
 } Client;
 
 static Client clients[MAX_CLIENT];
+static Channel channels[MAX_CHANNELS];
 static int nbr_of_clients = 0;
+int channel_count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 // We will keep the semaphore herer as a global variable
+
+void list_channels(int dSC) {
+  pthread_mutex_lock(&mutex);
+  char buffer[BUFFER_SIZE];
+  for (int i = 0; i < channel_count; i++) {
+    snprintf(buffer, BUFFER_SIZE, "Channel Name: %s\nDescription: %s\nNumber of Users: %d\n\n",
+             channels[i].name, channels[i].description, channels[i].client_count);
+    send_msg(dSC, buffer);
+  }
+  pthread_mutex_unlock(&mutex);
+}
+
+int join_channel(int dSC, char *channel_name) {
+  pthread_mutex_lock(&mutex);
+  send_msg(dSC, "Joining channel");
+  for (int i = 0; i < channel_count; i++) {
+    if (strcmp(channels[i].name, channel_name) == 0) {
+      // Find the client and add them to the channel
+      for (int j = 0; j < MAX_CLIENT; j++) {
+        if (clients[j].dSC == dSC) {
+          strncpy(clients[j].channel, channel_name, CHANNEL_NAME_LENGTH - 1);
+          clients[j].channel[CHANNEL_NAME_LENGTH - 1] = '\0';
+          channels[i].client_count++;
+          pthread_mutex_unlock(&mutex);
+          send_msg(dSC, "Channel joined successfully");
+          return 0; // Joined successfully
+        }
+      }
+    }
+  }
+  pthread_mutex_unlock(&mutex);
+  return -1; // Channel not found
+}
+
+int create_channel(const char *channel_name, const char *description) {
+    pthread_mutex_lock(&mutex);
+    if (channel_count >= MAX_CHANNELS) {
+        pthread_mutex_unlock(&mutex);
+        return -1; // Maximum number of channels reached
+    }
+    strncpy(channels[channel_count].name, channel_name, CHANNEL_NAME_LENGTH - 1);
+    channels[channel_count].name[CHANNEL_NAME_LENGTH - 1] = '\0';
+    strncpy(channels[channel_count].description, description, CHANNEL_DESCRIPTION_LENGTH - 1);
+    channels[channel_count].description[CHANNEL_DESCRIPTION_LENGTH - 1] = '\0';
+    channels[channel_count].client_count = 0;
+    channel_count++;
+    pthread_mutex_unlock(&mutex);
+    puts(channel_name);
+    puts(description);
+    return 0; // Channel created successfully
+}
 
 
 void find_client_username(int dSC, char username[]){

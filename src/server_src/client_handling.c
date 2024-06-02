@@ -13,17 +13,110 @@
 #include "censor_words.h"
 
 #define MAX_CLIENT 10
+#define MAX_CHANNELS 10
+#define CHANNEL_DESCRIPTION_LENGTH 128
+#define CHANNEL_NAME_LENGTH 20
+#define BUFFER_SIZE 1024
 
 typedef struct {
-    int dSC;
-    char username[21];
-    int username_lenght;
+  char name[CHANNEL_NAME_LENGTH];
+  char description[CHANNEL_DESCRIPTION_LENGTH];
+  int client_count;
+} Channel;
+
+typedef struct {
+  int dSC;
+  char username[21];
+  int username_lenght;
+  char channel[CHANNEL_NAME_LENGTH];
 } Client;
 
 static Client clients[MAX_CLIENT];
+static Channel channels[MAX_CHANNELS];
 static int nbr_of_clients = 0;
+int channel_count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 // We will keep the semaphore herer as a global variable
+
+
+
+void list_channels(int dSC) {
+  pthread_mutex_lock(&mutex);
+  char buffer[BUFFER_SIZE];
+  for (int i = 0; i < channel_count; i++) {
+    snprintf(buffer, BUFFER_SIZE, "Channel Name: %s\nDescription: %s\nNumber of Users: %d\n\n",
+             channels[i].name, channels[i].description, channels[i].client_count);
+    send_msg(dSC, buffer);
+  }
+  pthread_mutex_unlock(&mutex);
+}
+
+
+void remove_client_from_current_channel(int dSC) {
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i].dSC == dSC) {
+      if (strlen(clients[i].channel) > 0) {
+        // Find the channel the client belongs to
+        for (int j = 0; j < channel_count; j++) {
+          if (strcmp(channels[j].name, clients[i].channel) == 0) {
+            // Remove client from channel
+            channels[j].client_count--;
+            clients[i].channel[0] = '\0'; // Clear the client's channel
+            return;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+int join_channel(int dSC, char *channel_name) {
+  pthread_mutex_lock(&mutex);
+
+  // Find the channel
+  for (int i = 0; i < channel_count; i++) {
+    if (strcmp(channels[i].name, channel_name) == 0) {
+      // Remove the client from their current channel if they are in one
+      remove_client_from_current_channel(dSC);
+
+      // Find the client and add them to the new channel
+      for (int j = 0; j < MAX_CLIENT; j++) {
+        if (clients[j].dSC == dSC) {
+          strncpy(clients[j].channel, channel_name, CHANNEL_NAME_LENGTH - 1);
+          clients[j].channel[CHANNEL_NAME_LENGTH - 1] = '\0';
+          channels[i].client_count++;
+          pthread_mutex_unlock(&mutex);
+          send_msg(dSC, "Channel joined successfully");
+          return 0; // Joined successfully
+        }
+      }
+    }
+  }
+
+  pthread_mutex_unlock(&mutex);
+  send_msg(dSC, "Channel not found");
+  return -1; // Channel not found
+}
+
+
+int create_channel(const char *channel_name, const char *description) {
+  pthread_mutex_lock(&mutex);
+  if (channel_count >= MAX_CHANNELS) {
+    pthread_mutex_unlock(&mutex);
+    return -1; // Maximum number of channels reached
+  }
+  strncpy(channels[channel_count].name, channel_name, CHANNEL_NAME_LENGTH - 1);
+  channels[channel_count].name[CHANNEL_NAME_LENGTH - 1] = '\0';
+  strncpy(channels[channel_count].description, description, CHANNEL_DESCRIPTION_LENGTH - 1);
+  channels[channel_count].description[CHANNEL_DESCRIPTION_LENGTH - 1] = '\0';
+  channels[channel_count].client_count = 0;
+  channel_count++;
+  pthread_mutex_unlock(&mutex);
+  puts(channel_name);
+  puts(description);
+  return 0; // Channel created successfully
+}
 
 
 void find_client_username(int dSC, char username[]){
@@ -146,11 +239,11 @@ void free_client_list(){
 }
 
 int can_accept_new_client(sem_t *semaphore) {
-    if (sem_wait(semaphore) != 0) {
-        perror("Failed to wait on semaphore");
-        return -1;  // Return -1 on fail
-    }
-    return 0;  // Return 0 on success
+  if (sem_wait(semaphore) != 0) {
+    perror("Failed to wait on semaphore");
+    return -1;  // Return -1 on fail
+  }
+  return 0;  // Return 0 on success
 }
 
 
@@ -166,18 +259,70 @@ void add_new_client(int dSC){
   pthread_mutex_unlock(&mutex);
 }
 
-void broadcast_message(int sender, char *message, size_t message_size) {
-  printf("Message broadcasting : %s\n", message);
-  pthread_mutex_lock(&mutex); // Lock mutex for thread safety
-  message_size++;
+
+
+int client_in_channel(int dSC, const char *channel_name) {
   for (int i = 0; i < MAX_CLIENT; i++) {
-    if (clients[i].dSC != 0 && clients[i].dSC != sender) {
-      send(clients[i].dSC, &message_size, sizeof(size_t), 0);
-      send(clients[i].dSC, message, message_size, 0);
+    if (clients[i].dSC == dSC && strcmp(clients[i].channel, channel_name) == 0) {
+      return 1; // Client belongs to the channel
     }
   }
+  return 0; // Client does not belong to the channel
+}
+
+
+void find_senders_channel(int sender, char *sender_channel) {
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i].dSC == sender) {
+      strncpy(sender_channel, clients[i].channel, CHANNEL_NAME_LENGTH);
+      sender_channel[CHANNEL_NAME_LENGTH - 1] = '\0'; // Ensure null-termination
+      return;
+    }
+  }
+  sender_channel[0] = '\0'; // If sender's channel not found, set to empty string
+}
+
+
+
+void broadcast_message(int sender, char *message, size_t message_size) {
+  pthread_mutex_lock(&mutex);
+
+  // Find the sender's channel
+  char sender_channel[CHANNEL_NAME_LENGTH];
+  find_senders_channel(sender, sender_channel);
+
+  // Construct the new message with the channel name or "General"
+  char prefixed_message[BUFFER_SIZE];
+  if (strlen(sender_channel) > 0) {
+    snprintf(prefixed_message, BUFFER_SIZE, "[%s]: %s", sender_channel, message);
+  } else {
+    snprintf(prefixed_message, BUFFER_SIZE, "[General]: %s", message);
+  }
+
+  size_t prefixed_message_size = strlen(prefixed_message) + 1;
+
+  // Send the prefixed message to clients in the same channel or in the general channel
+  for (int i = 0; i < MAX_CLIENT; i++) {
+    if (clients[i].dSC != 0 && clients[i].dSC != sender) {
+      if (strlen(sender_channel) > 0) {
+        if (strcmp(clients[i].channel, sender_channel) == 0) {
+          send(clients[i].dSC, &prefixed_message_size, sizeof(size_t), 0);
+          send(clients[i].dSC, prefixed_message, prefixed_message_size, 0);
+        }
+      } else {
+        if (strlen(clients[i].channel) == 0) {
+          send(clients[i].dSC, &prefixed_message_size, sizeof(size_t), 0);
+          send(clients[i].dSC, prefixed_message, prefixed_message_size, 0);
+        }
+      }
+    }
+  }
+
   pthread_mutex_unlock(&mutex);
 }
+
+
+
 
 void remove_client(int dSC){
   pthread_mutex_lock(&mutex);
@@ -188,6 +333,7 @@ void remove_client(int dSC){
       break;
     }
   }
+  remove_client_from_current_channel(dSC);
   pthread_mutex_unlock(&mutex);
   sem_post(get_semaphore());
   nbr_of_clients--;

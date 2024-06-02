@@ -25,3 +25,5 @@ create_channel "<channelname>" "<channeldesc>" : Create a channel name <channeln
 join_channel <channelname> : Join the channel name channelname and leave current channel.
 
 list_channels : Display a list of current channels with its name, description and number of users.
+
+leave_channel : Move to general channel.

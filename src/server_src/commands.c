@@ -230,3 +230,12 @@ void cmd_list_channels(int dSC){
     send_msg(dSC, "Availables channels : ");
     list_channels(dSC);
 }
+
+void cmd_leave_channel(int dSC) {
+    char username[21];
+    find_client_username(dSC, username);
+    remove_client_from_current_channel(dSC);
+    send_msg(dSC, "Moved to general channel");
+}
+
+

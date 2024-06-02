@@ -20,6 +20,9 @@ void add_new_client(int dSC);
 int can_accept_new_client(sem_t *semaphore);
 sem_t new_semaphore();
 
+
+void remove_client_from_current_channel(int dSC);
+
 void remove_client(int dSC);
 /* is_username_valid : Checks if username can be used
  * Parameters : char username[] 

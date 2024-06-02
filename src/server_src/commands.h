@@ -50,4 +50,6 @@ void cmd_join_channel(int dSC, char* command);
 
 void cmd_list_channels(int dSC);
 
+void cmd_leave_channel(int dSC);
+
 #endif

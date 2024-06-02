@@ -107,6 +107,10 @@ void execute_command(char *command, int dSC, sem_t semaphore) {
     cmd_list_channels(dSC);
     return;
   }
+  if (strncmp(command, "@leave_channel", 14) == 0) {
+    cmd_leave_channel(dSC);
+    return;
+  }
 
 
   send_msg(dSC,"Unknown command \nCheck man for more info\0");

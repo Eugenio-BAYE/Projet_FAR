@@ -13,6 +13,8 @@
 #include "client_handling.h"
 #include "server_utils.h"
 
+#define BUFFER_SIZE 1024
+
 //*********|WARNING|************/
 // Here it's the "@send_file" command handling so the
 // server is actually RECEIVING the file from the client
@@ -77,36 +79,45 @@ void generate_unique_file_path(char *file_path, const char *dir, const char *fil
 }
 
 void receive_and_write_file(int socket, FILE *file) {
-  char buffer[1024];
-  int bytes_read;
-  size_t sizeof_file = -1;
+    size_t file_size;
+    char buffer[BUFFER_SIZE];
+    int bytes_read;
+    size_t total_bytes_received = 0;
 
-  // Recevoir la taille du fichier
-    size_t file_size = -1;
+    // Receive the size of the file
     if (recv(socket, &file_size, sizeof(file_size), 0) != sizeof(file_size)) {
         perror("Failed to receive file size");
+        fclose(file);
+        close(socket);
         return;
     }
 
-    printf("File size: %ld\n", file_size);
-  int size_so_far = 0;
+    // Receive the file contents
+    while (total_bytes_received < file_size) {
+        bytes_read = recv(socket, buffer, sizeof(buffer), 0);
+        if (bytes_read <= 0) {
+            if (bytes_read == 0) {
+                puts("Server disconnected");
+            } else {
+                perror("Failed to receive file contents");
+            }
+            fclose(file);
+            close(socket);
+            return;
+        }
 
-  while ((bytes_read = recv(socket, buffer, sizeof(buffer), 0)) > 0 && size_so_far < file_size) {
-    puts(buffer);
-    size_so_far += bytes_read;
-    if (fwrite(buffer, 1, bytes_read, file) != bytes_read) {
-      perror("Failed to write to file");
-      fclose(file);
-      close(socket);
-      pthread_exit(NULL);
+        if (fwrite(buffer, 1, bytes_read, file) != bytes_read) {
+            perror("Failed to write to file");
+            fclose(file);
+            close(socket);
+            return;
+        }
+
+        total_bytes_received += bytes_read;
     }
-  }
 
-  if (bytes_read < 0) {
-    perror("Failed to receive file contents");
-  }
-
-  fclose(file);
+    fclose(file);
+    printf("Finished receiving file\n");
 }
 
 void* file_receiving_thread() {
@@ -131,13 +142,6 @@ void* file_receiving_thread() {
     close(dSC);
     pthread_exit(NULL);
   }
-  printf("Téléchargement dans %s\n", file_name);
-  const char *message = "Bonjour princesse\n";
-  size_t message_length = strlen(message);
-
-  if (fwrite(message, 1, message_length, file) != message_length) {
-    perror("Failed to write the complete message to the file");
-  } 
   receive_and_write_file(dSC, file);
   printf("End Receiving\n");
   close(dSC);

@@ -97,12 +97,10 @@ void* file_receiving_thread(void *arg) {
   resume_input();
 
   // Send the integer as a string to the server
-  printf("Sending message\n");
   if (send_msg(dS_receiver, input_buffer, strlen(input_buffer) + 3) == -1) { 
     //close(dS_receiver);
     pthread_exit(NULL);
   }
-  printf("Message sent \n");
 
   // Following the original task
   char *file_name = receive_file_name(dS_receiver);
@@ -121,6 +119,7 @@ void* file_receiving_thread(void *arg) {
 
   receive_and_write_file(dS_receiver, file);
 
+  printf("Filed received, you can now chat on the server : \n");
   close(dS_receiver);
   pthread_exit(NULL);
 }

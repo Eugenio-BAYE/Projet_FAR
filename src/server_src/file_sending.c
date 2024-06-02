@@ -35,8 +35,6 @@ int create_file_sending_socket(int port) {
 // Send the list of available files to the client
 void send_file_list(int dSC) {
 
-    send_msg(dSC, "Sending messages on specific port");
-
     DIR *dir;
     struct dirent *entry;
     char buffer[BUFFER_SIZE];
@@ -86,8 +84,6 @@ int receive_client_selection(int dSC, char *selected_file) {
         return -1;
     }
     buffer[bytes_received] = '\0';
-  puts("Buffer : ");
-  puts(buffer);
 
   // Check if the client canceled
   if (strncmp(buffer, "cancel", 6) == 0) {
@@ -95,7 +91,6 @@ int receive_client_selection(int dSC, char *selected_file) {
     return 0;
   }
 
-    printf("choose number %s\n", buffer);
   // Convert the selection to a number
   int file_index = 0;
   // Check if the message starts with @choose
@@ -103,8 +98,6 @@ int receive_client_selection(int dSC, char *selected_file) {
     // Extract the number after @choose
     char *number_str = buffer + 8;  // Move the pointer to the number part
     file_index = atoi(number_str);
-    printf("Extracted number: %d\n", file_index);
-
     // Now you can use file_index as needed
   } else {
     printf("Invalid command\n");
@@ -170,7 +163,6 @@ int send_filename(int dS, char* buffer, size_t input_length) {
 void send_file_to_client(int dSC, char *file_name) {
 
      size_t size_of_filename = strlen(file_name)+1;
-  printf("%ld\n", size_of_filename);
 
   send_filename(dSC, file_name, size_of_filename);
 
@@ -203,7 +195,6 @@ struct handle_client_args{
 
 // Main thread function to handle file sending
 void* file_sending_thread(void* args) {
-  printf("Entering file_sending_thread\n");
   struct handle_client_args* t_args=(struct handle_client_args*)args;
   int normal_dSC=t_args->normal_dSC;
     int dSC = new_client_connection(dS_sender);
@@ -212,10 +203,7 @@ void* file_sending_thread(void* args) {
         perror("Failed to accept new client connection.\n");
         pthread_exit(NULL);
     }
-  printf("BP file_sending_thread\n");
 
-  printf("%d normal %d specific\n", normal_dSC, dSC);
-  send_msg(dSC, "Message from server");
 
 
     send_file_list(dSC);
@@ -224,7 +212,6 @@ void* file_sending_thread(void* args) {
     int selection_status = receive_client_selection(dSC, selected_file);
 
     if (selection_status == 1) {
-      printf("Sending %s to client\n", selected_file);
         send_file_to_client(dSC, selected_file);
     } else if (selection_status == 0) {
         printf("Client canceled the file transfer.\n");

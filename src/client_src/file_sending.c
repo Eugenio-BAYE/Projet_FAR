@@ -61,7 +61,6 @@ int receive_client_selection(char *selected_file) {
         *newline = '\0';  // Remplace par '\0' si '\n' est trouvé
     }
 
-    printf("Input received: '%s'\n", buffer); // Affiche l'entrée après suppression de la nouvelle ligne
 
     // Check if the client canceled
     if (strncmp(buffer, "cancel", 6) == 0) {
@@ -94,9 +93,7 @@ int receive_client_selection(char *selected_file) {
   while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type == DT_REG) { // Only consider regular files
       current_index++;
-      printf("Current file: %s (index %d)\n", entry->d_name, current_index); // Affiche chaque fichier trouvé
       if (current_index == file_index) {
-        printf("Index found\n");
         strncpy(selected_file, entry->d_name, BUFFER_SIZE);
         printf("File selected: %s\n", selected_file); // Affiche le fichier sélectionné
         closedir(dir);
@@ -139,18 +136,13 @@ int send_filename(int dS, char* buffer, size_t input_length) {
 }
 
 // Send the selected file to the client
-void send_file_to_client(int dSC, char *file_name) {
+void send_file_to_server(int dSC, char *file_name) {
+    size_t size_of_filename = strlen(file_name) + 1;
+
+    send_filename(dSC, file_name, size_of_filename);
+
     char file_path[BUFFER_SIZE];
     snprintf(file_path, BUFFER_SIZE, "%s/%s", DIRECTORY_PATH, file_name);
-    printf("Sending file: %s\n", file_path); // Debugging statement
-    size_t size_of_filename = strlen(file_name)+1;
-  printf("%ld\n", size_of_filename);
-
-  send_filename(dSC, file_name, size_of_filename);
-
-  printf("Filename sent successfully\n");
-
-
 
     FILE *file = fopen(file_path, "rb");
     if (file == NULL) {
@@ -158,29 +150,31 @@ void send_file_to_client(int dSC, char *file_name) {
         return;
     }
 
-  char buffer[BUFFER_SIZE];
-  size_t bytes_read = -1;
-  // Get the size of the file
-  fseek(file, 0, SEEK_END);
-  size_t file_size = ftell(file);
-  fseek(file, 0, SEEK_SET);
+    // Get the size of the file
+    fseek(file, 0, SEEK_END);
+    size_t file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-  // Send the size of the file
-  if (send(dSC, &file_size, sizeof(file_size), 0) != sizeof(file_size)) {
-    perror("Failed to send file size");
-    fclose(file);
-    return;
-  }
-  // Send the file in chunks
-  while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
-    if (send(dSC, buffer, bytes_read, 0) != bytes_read) {
-      perror("Failed to send file");
-      break;
+    // Send the size of the file
+    if (send(dSC, &file_size, sizeof(file_size), 0) != sizeof(file_size)) {
+        perror("Failed to send file size");
+        fclose(file);
+        return;
     }
-  }
 
-  fclose(file);
-  printf("File sent successfully or with errors.\n"); // Debugging statement
+    char buffer[BUFFER_SIZE];
+    size_t bytes_read;
+
+    // Send the file in chunks
+    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0) {
+        if (send(dSC, buffer, bytes_read, 0) != bytes_read) {
+            perror("Failed to send file");
+            break;
+        }
+    }
+    printf("Finished sending file\n");
+
+    fclose(file);
 }
 
 // Main thread function to handle file sending
@@ -188,7 +182,8 @@ void* file_sending_thread(void* arg) {
     FileSendArgs* args = (FileSendArgs*) arg;
     int dS_sender = args->dS_sender;
     char* selected_file = args->selected_file;
-    send_file_to_client(dS_sender,selected_file);  // Perform the file sending
+    send_file_to_server(dS_sender,selected_file);  // Perform the file sending
+    printf("You can now send messages to the server again : \n");
     free(args);  // Clean up the allocated memory
     pthread_exit(NULL);
 }

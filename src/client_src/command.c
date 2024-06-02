@@ -20,7 +20,6 @@ void cmd_send_file() {
     char selected_file[BUFFER_SIZE];
     int selection_status = receive_client_selection(selected_file);
     args->selected_file=selected_file;
-    printf("temp1\n");
     if (selection_status == 1) {
         args->dS_sender = connect_socket(get_addr(), get_port() + 1);
         if (args->dS_sender < 0) {
@@ -29,7 +28,6 @@ void cmd_send_file() {
             return;
         }
 
-        printf("File sending thread being created...\n");
         pthread_t send_thread;
         if (pthread_create(&send_thread, NULL, file_sending_thread, args) != 0) {
             perror("Failed to create file send thread");
@@ -38,7 +36,6 @@ void cmd_send_file() {
             return;
         }
         pthread_detach(send_thread);
-        printf("File send thread started and detached successfully.\n");
         return;
     } else if (selection_status == 0) {
         printf("Client canceled the file transfer.\n");

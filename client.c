@@ -12,8 +12,6 @@
 #include "src/client_src/file_sending.h"
 #include "src/client_src/file_receiving.h"
 
-
-
 int main(int argc, char *argv[]) {
   // Check the number of arguments
   if (argc != 3) {
@@ -36,6 +34,8 @@ int main(int argc, char *argv[]) {
   while (get_is_running()){
     sleep(1);
   }
-  shutdown(get_dS(), 2); // Close the connection
+
+  // Close the connection
+  shutdown(get_dS(), 2);
   return 1;
 }

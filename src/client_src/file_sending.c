@@ -17,7 +17,6 @@ typedef struct {
     char *selected_file;
 } FileSendArgs;
 
-// Send the list of available files to the client
 void send_file_list() {
     DIR *dir;
     struct dirent *entry;
@@ -45,7 +44,6 @@ void send_file_list() {
     closedir(dir);
 }
 
-// Receive client's selection directly from the terminal
 int receive_client_selection(char *selected_file) {
     char buffer[1024]; // Reasonable size for user input
 
@@ -56,11 +54,10 @@ int receive_client_selection(char *selected_file) {
     }
 
     // Remove any newline character included by fgets
-    char *newline = strchr(buffer, '\n');  // Trouve le premier '\n'
+    char *newline = strchr(buffer, '\n');  
     if (newline) {
-        *newline = '\0';  // Remplace par '\0' si '\n' est trouvé
+        *newline = '\0';  
     }
-
 
     // Check if the client canceled
     if (strncmp(buffer, "cancel", 6) == 0) {
@@ -70,11 +67,11 @@ int receive_client_selection(char *selected_file) {
 
     // Convert the selection to a number
     int file_index = atoi(buffer);
-    printf("File index selected: %d\n", file_index); // Affiche l'indice du fichier sélectionné
+    printf("File index selected: %d\n", file_index); 
 
     if (file_index <= 0) {
         printf("Invalid input or cancel was selected.\n");
-        return -1; // Invalid number or "cancel"
+        return -1; 
     }
 
     // Find the corresponding file
@@ -90,26 +87,27 @@ int receive_client_selection(char *selected_file) {
 
     printf("Looking for the selected file...\n");
 
-  while ((entry = readdir(dir)) != NULL) {
-    if (entry->d_type == DT_REG) { // Only consider regular files
-      current_index++;
-      if (current_index == file_index) {
-        strncpy(selected_file, entry->d_name, BUFFER_SIZE);
-        printf("File selected: %s\n", selected_file); // Affiche le fichier sélectionné
-        closedir(dir);
-        return 1; // File found
-      }
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) { // Only consider regular files
+            current_index++;
+            if (current_index == file_index) {
+                strncpy(selected_file, entry->d_name, BUFFER_SIZE);
+                printf("File selected: %s\n", selected_file); 
+                closedir(dir);
+                return 1; 
+            }
+        }
     }
-  }
 
-    printf("File with index %d not found.\n", file_index); // Affiche si l'indice du fichier n'est pas trouvé
+    printf("File with index %d not found.\n", file_index); 
     closedir(dir);
-    return -1; // File index not found
+    return -1; 
 }
 
 int send_filename(int dS, char* buffer, size_t input_length) {
-    buffer[input_length - 1] = '\0';
+    buffer[input_length - 1] = '\0'; 
 
+    // Send the size of the filename
     int send_size = send(dS, &input_length, sizeof(size_t), 0);
     if (send_size <= 0) {
         if (send_size == 0) {
@@ -121,6 +119,7 @@ int send_filename(int dS, char* buffer, size_t input_length) {
         return -1;
     }
 
+    // Send the filename
     int send_message = send(dS, buffer, input_length, 0);
     if (send_message <= 0) {
         if (send_message == 0) {
@@ -135,10 +134,10 @@ int send_filename(int dS, char* buffer, size_t input_length) {
     return 0;
 }
 
-// Send the selected file to the client
 void send_file_to_server(int dSC, char *file_name) {
     size_t size_of_filename = strlen(file_name) + 1;
 
+    // Send the filename to the client
     send_filename(dSC, file_name, size_of_filename);
 
     char file_path[BUFFER_SIZE];
@@ -177,13 +176,12 @@ void send_file_to_server(int dSC, char *file_name) {
     fclose(file);
 }
 
-// Main thread function to handle file sending
 void* file_sending_thread(void* arg) {
     FileSendArgs* args = (FileSendArgs*) arg;
     int dS_sender = args->dS_sender;
     char* selected_file = args->selected_file;
-    send_file_to_server(dS_sender,selected_file);  // Perform the file sending
+    send_file_to_server(dS_sender,selected_file);  
     printf("You can now send messages to the server again : \n");
-    free(args);  // Clean up the allocated memory
+    free(args);  
     pthread_exit(NULL);
 }

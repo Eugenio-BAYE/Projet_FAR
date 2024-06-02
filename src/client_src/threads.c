@@ -5,11 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/* create_threads : Creates and manages the threads for sending and receiving messages.
- * Parameters: None.
- * Returns: 0 on success, 1 on error.
- * Description: This function creates two threads: one for sending messages and one for receiving messages. It waits for both threads to finish before returning.
- */
 int create_threads() {
     pthread_t thread1, thread2;
     struct thread_args args1 = { get_dS() };

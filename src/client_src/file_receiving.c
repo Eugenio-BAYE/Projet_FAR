@@ -11,13 +11,12 @@
 
 int dS_receiver;
 
-// Create directory if it does not exist
 void create_directory_if_not_exists(const char *path) {
   struct stat st = {0};
   if (stat(path, &st) == -1) {
     if (mkdir(path, 0700) == -1) {
-      perror("Failed to create directory");
-      pthread_exit(NULL);
+      perror("Failed to create directory"); // Indicate if directory creation fails
+      pthread_exit(NULL); // Exit the thread in case of failure
     }
   }
 }
@@ -26,19 +25,19 @@ char* receive_file_name(int socket) {
   size_t input_length;
 
   if (recv(socket, &input_length, sizeof(size_t), 0) <= 0) {
-    perror("Failed to receive the size of the file name");
+    perror("Failed to receive the size of the file name"); // Indicate if receiving size fails
     close(socket);
     pthread_exit(NULL);
   }
 
   char *file_name = malloc(input_length + 1);
   if (!file_name) {
-    perror("Failed to allocate memory for the file name");
+    perror("Failed to allocate memory for the file name"); // Indicate if memory allocation fails
     close(socket);
     pthread_exit(NULL);
   }
   if (recv(socket, file_name, input_length, 0) <= 0) {
-    perror("Failed to receive the file name");
+    perror("Failed to receive the file name"); // Indicate if receiving file name fails
     free(file_name);
     close(socket);
     pthread_exit(NULL);
@@ -66,7 +65,7 @@ void receive_and_write_file(int socket, FILE *file) {
 
   while ((bytes_read = recv(socket, buffer, sizeof(buffer), 0)) > 0) {
     if (fwrite(buffer, 1, bytes_read, file) != bytes_read) {
-      perror("Failed to write to file");
+      perror("Failed to write to file"); // Indicate if writing to file fails
       fclose(file);
       close(socket);
       pthread_exit(NULL);
@@ -74,13 +73,11 @@ void receive_and_write_file(int socket, FILE *file) {
   }
 
   if (bytes_read < 0) {
-    perror("Failed to receive file contents");
+    perror("Failed to receive file contents"); // Indicate if receiving file contents fails
   }
 
   fclose(file);
 }
-
-
 
 void* file_receiving_thread(void *arg) {
   dS_receiver = connect_socket(get_addr(), get_port()-1);
@@ -89,7 +86,7 @@ void* file_receiving_thread(void *arg) {
   while (receive_msg(dS_receiver)!=1){
   }
   if (fgets(input_buffer, 64, stdin) == NULL) {
-    perror("Failed to read input");
+    perror("Failed to read input"); // Indicate if reading input fails
     close(dS_receiver);
     pthread_exit(NULL);
   }
@@ -112,14 +109,14 @@ void* file_receiving_thread(void *arg) {
 
   FILE *file = fopen(file_path, "wb");
   if (!file) {
-    perror("Failed to open file for writing");
+    perror("Failed to open file for writing"); // Indicate if opening file for writing fails
     close(dS_receiver);
     pthread_exit(NULL);
   }
 
   receive_and_write_file(dS_receiver, file);
 
-  printf("Filed received, you can now chat on the server : \n");
+  printf("Filed received, you can now chat on the server : \n"); // Indicate that the file has been received successfully
   close(dS_receiver);
   pthread_exit(NULL);
 }

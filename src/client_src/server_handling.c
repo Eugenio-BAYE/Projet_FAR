@@ -17,7 +17,6 @@
 
 
 #define msgLength 256
-
 int dS;
 int is_running = 1;
 int port;
@@ -102,15 +101,15 @@ int connect_socket(const char * arg1, int arg2 ){
 }
 
 int receive_memset(int dSC, char msg[], int msgLenght){
-  memset(msg, '\0', msgLength); // Initialize the buffer with null characters
-  int received_size = recv(dSC, msg, msgLength, 0); // Receive data from the socket
-  return received_size; // Return the number of bytes received
+  memset(msg, '\0', msgLenght);
+  int received_size = recv(dSC, msg, msgLenght, 0);
+  return received_size;
 }
 
 int send_msg(int dS, char* buffer, size_t input_length) {
-    buffer[input_length - 1] = '\0'; // Ensure the message is null-terminated
+    buffer[input_length - 1] = '\0';
 
-    int send_size = send(dS, &input_length, sizeof(size_t), 0); // Send the size of the message
+    int send_size = send(dS, &input_length, sizeof(size_t), 0);
     if (send_size <= 0) {
         if (send_size == 0) {
             puts("Server disconnected when sending size");
@@ -121,7 +120,7 @@ int send_msg(int dS, char* buffer, size_t input_length) {
         return -1;
     }
 
-    int send_message = send(dS, buffer, input_length, 0); // Send the message
+    int send_message = send(dS, buffer, input_length, 0);
     if (send_message <= 0) {
         if (send_message == 0) {
             puts("Server disconnected when sending message");
@@ -132,7 +131,7 @@ int send_msg(int dS, char* buffer, size_t input_length) {
         return -1;
     }
 
-    free(buffer); // Free the memory allocated for the buffer
+    free(buffer);
     return 0;
 }
 
@@ -142,23 +141,23 @@ void* loop_send_msg(void* args) {
 
     while (get_is_running() == 1) {
         while(input_break){
-      sleep(1); // Sleep while input is suspended
+      sleep(1);
     }
-        char * buffer = malloc(msgLength); // Allocate memory for the message buffer
+        char * buffer = malloc(msgLength);
         if (buffer == NULL) {
             perror("Error allocating memory for buffer");
             pthread_exit(0);
         }
 
-        if (fgets(buffer, msgLength, stdin) == NULL) { // Read input from stdin
+        if (fgets(buffer, msgLength, stdin) == NULL) {
             puts("Error reading or end of file detected");
             free(buffer);
             pthread_exit(0);
         }
 
-        size_t input_length = strlen(buffer); // Get the length of the message
-        execute_command(buffer, dS); // Execute the command
-        if (send_msg(dS, buffer, input_length) == -1) { // Send the message
+        size_t input_length = strlen(buffer);
+        execute_command(buffer, dS);
+        if (send_msg(dS, buffer, input_length) == -1) {
             pthread_exit(0);
         }
     }
@@ -168,7 +167,7 @@ void* loop_send_msg(void* args) {
 int receive_msg(int dS) {
     size_t input_length;
 
-    int receive_size = recv(dS, &input_length, sizeof(size_t), 0); // Receive the size of the message
+    int receive_size = recv(dS, &input_length, sizeof(size_t), 0);
     if (receive_size <= 0) {
         if (receive_size == 0) {
             puts("Server disconnected");
@@ -178,18 +177,18 @@ int receive_msg(int dS) {
         return -1;
     }
 
-    if (input_length > 1024) { // Check if the message size exceeds the limit
+    if (input_length > 1024) {
         fprintf(stderr, "Error: Message size %zu is too large\n", input_length);
         return -1;
     }
 
-    char * msg = malloc(input_length); // Allocate memory for the message
+    char * msg = malloc(input_length);
     if (msg == NULL) {
         perror("Error allocating memory for msg");
         return -1;
     }
 
-    int receive_message = receive_memset(dS, msg, input_length); // Receive the message
+    int receive_message = receive_memset(dS, msg, input_length);
     if (receive_message <= 0) {
         if (receive_message == 0) {
             puts("Server disconnected");
@@ -199,13 +198,13 @@ int receive_msg(int dS) {
         free(msg);
         return -1;
     }
-    if (strcmp(msg, "@end") == 0) { // Check if the end message is received
+    if (strcmp(msg, "@end") == 0) {
         free(msg);
         return 1;
     }
 
-    puts(msg); // Print the received message
-    free(msg); // Free the memory allocated for the message
+    puts(msg);
+    free(msg);
     return 0;
 }
 
